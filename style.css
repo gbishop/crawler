@@ -1,0 +1,71 @@
+.row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 100%;
+  flex: 1;
+}
+
+body {
+  --available-height: calc(100vh);
+  margin: 0;
+  font-size: 2vw;
+}
+
+button.choice {
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  font-size: 10vw;
+}
+
+button#playButton {
+  font-size: 2vw;
+}
+
+div#game {
+  flex: 3;
+  height: var(--available-height);
+  width: 60vw;
+}
+
+button.selected {
+  background-color: pink;
+}
+
+button#setup {
+  position: absolute;
+  top: 10;
+  left: 10;
+  background-color: black;
+  border-radius: 5px;
+}
+
+#setup img {
+  width: 20px;
+  height: 20px;
+}
+
+body.settings div#play {
+  display: none;
+}
+
+body.play div#settings {
+  display: none;
+}
+
+body.settings div#settings {
+  background-color: white;
+  color: black;
+  padding: 10px;
+}
+
+input {
+  font-size: 2vw;
+}

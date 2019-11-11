@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Base Game Demo</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.19.0/dist/phaser.min.js"></script>
+    <script type="module" src="src/app.js"></script>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body class="settings">
+    <div id="play" class="row">
+      <button id="setup" title="settings"><img src="assets/gear.png" /></button>
+      <button id="left" class="col choice">&larr;</button>
+      <div id="game" class="col"></div>
+      <button id="right" class="col choice">&rarr;</button>
+    </div>
+    <div id="settings">
+      <h1>Base demo</h1>
+      <p>
+        Intro info.
+      </p>
+      <p>Select a game play mode:</p>
+      <div>
+        <input type="radio" id="auto" name="mode" value="auto" checked />
+        <label for="auto"
+          ><b>Automatic play</b> will demonstrate how gameplay works.</label
+        >
+      </div>
+      <div>
+        <input type="radio" id="one" name="mode" value="one" />
+        <label for="one"
+          ><b>One-switch no fail mode</b> has the computer make the correct
+          choice but has the player press their button to continue.</label
+        >
+      </div>
+      <div>
+        <input type="radio" id="full" name="mode" value="full" />
+        <label for="full"
+          ><b>Full play mode</b> has the player making the choices.</label
+        >
+      </div>
+
+      <p>
+        More info.
+      </p>
+
+      <div>
+        <input type="checkbox" id="sound" />
+        <label for="sound">Enable sound</label>
+      </div>
+
+      <p>
+        Use the gear icon in the upper right to come back here from the game
+      </p>
+
+      <button id="playButton">Play</button>
+    </div>
+  </body>
+</html>
