@@ -93,6 +93,7 @@ export class GameScene extends Phaser.Scene {
     this.finder = new EasyStar.js();
     this.finder.setGrid(grid);
     this.finder.setAcceptableTiles([28]);
+    this.finder.enableDiagonals();
 
     this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
 
