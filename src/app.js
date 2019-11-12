@@ -6,10 +6,10 @@ import { getInput, getInputAll } from "./helpers.js";
 const config = {
   title: "Base",
   type: Phaser.AUTO,
-  width: 600,
-  height: 800,
+  width: 1024,
+  height: 1024,
   scale: {
-    mode: Phaser.Scale.RESIZE,
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
   parent: "game",
@@ -42,6 +42,10 @@ window.onload = () => {
     document.body.classList.value = "play";
     game = new MyGame(config);
   });
+  // hack for testing
+  if (document.body.classList.value === "play") {
+    game = new MyGame(config);
+  }
 
   getInputAll("input[name=mode]").map(
     node => (node.checked = node.value == settings.mode)
