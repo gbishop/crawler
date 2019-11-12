@@ -6,8 +6,8 @@ import { getInput, getInputAll } from "./helpers.js";
 const config = {
   title: "Base",
   type: Phaser.AUTO,
-  width: 1024,
-  height: 1024,
+  width: 20 * 32,
+  height: 20 * 32,
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH

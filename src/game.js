@@ -21,24 +21,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
-    this.input.on("pointerup", pointer => {
-      var x = pointer.x;
-      var y = pointer.y;
-      var toX = Math.floor(x / 32);
-      var toY = Math.floor(y / 32);
-      var fromX = Math.floor(this.player.x / 32);
-      var fromY = Math.floor(this.player.y / 32);
-
-      this.finder.findPath(fromX, fromY, toX, toY, path => {
-        if (path === null) {
-          console.warn("Path was not found.");
-        } else {
-          this.moveCharacter(path);
-        }
-      });
-      this.finder.calculate(); // don't fthis, otherwise nothing happens
-    });
-
     this.dungeon = new Dungeon({
       size: [32, 32],
       // seed: "abcd", //omit for generated seed
@@ -50,11 +32,11 @@ export class GameScene extends Phaser.Scene {
         },
         any: {
           min_size: [2, 2],
-          max_size: [5, 5],
+          max_size: [7, 7],
           max_exits: 2
         }
       },
-      max_corridor_length: 6,
+      max_corridor_length: 20,
       min_corridor_length: 2,
       corridor_density: 0, //corridors per room
       symmetric_rooms: false, // exits must be in the center of a wall if true
@@ -64,6 +46,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.dungeon.generate();
     let [ix, iy] = this.dungeon.start_pos;
+
     var phaserGuy = this.add.image(32, 32, "phaserguy");
     phaserGuy.setDepth(1);
     phaserGuy.setOrigin(0, 0.5);
@@ -82,7 +65,6 @@ export class GameScene extends Phaser.Scene {
       }
       grid.push(row);
     }
-    grid[iy][ix] = 42;
     this.map = this.make.tilemap({
       data: grid,
       tileWidth: 32,
@@ -95,12 +77,41 @@ export class GameScene extends Phaser.Scene {
     this.finder.setGrid(grid);
     this.finder.setAcceptableTiles([28]);
     this.finder.enableDiagonals();
+    this.finder.disableCornerCutting();
 
     this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
 
     // control sound
     if (settings.sound) {
     }
+
+    // move on mouse click
+    this.input.on("pointerup", pointer =>
+      this.moveTo(
+        this.cameras.main.scrollX + pointer.x,
+        this.cameras.main.scrollY + pointer.y
+      )
+    );
+
+    // configure the camera
+    this.cameras.main.setSize(20 * 32, 20 * 32);
+    this.cameras.main.startFollow(this.player);
+  }
+
+  moveTo(x, y) {
+    var toX = Math.floor(x / 32);
+    var toY = Math.floor(y / 32);
+    var fromX = Math.floor(this.player.x / 32);
+    var fromY = Math.floor(this.player.y / 32);
+
+    this.finder.findPath(fromX, fromY, toX, toY, path => {
+      if (path === null) {
+        console.warn("Path was not found.");
+      } else {
+        this.moveCharacter(path);
+      }
+    });
+    this.finder.calculate(); // don't fthis, otherwise nothing happens
   }
 
   moveCharacter(path) {
