@@ -1,6 +1,7 @@
 /** @typedef {import('phaser')} Phaser */
 import settings from "./settings.js";
 import Dungeon from "./dungeon-generator/generators/dungeon.js";
+import EasyStar from "./easystar/easystar.js";
 
 export class GameScene extends Phaser.Scene {
   constructor() {
