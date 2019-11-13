@@ -1,11 +1,11 @@
 {
-  "name": "space-game",
+  "name": "crawler",
   "version": "0.1.0",
-  "description": "Space game (Phaser 3 + TypeScript)",
+  "description": "Dungeon crawler game (Phaser 3 + Javascript)",
   "scripts": {
     "start": "live-server"
   },
-  "author": "Gary Bishop after Mariya Davydova",
+  "author": "Gary Bishop",
   "license": "MIT",
   "devDependencies": {
     "live-server": "^1.2.1",
