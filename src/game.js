@@ -22,30 +22,32 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.dungeon = new Dungeon({
-      size: [32, 32],
+      size: [100, 100],
       // seed: "abcd", //omit for generated seed
       rooms: {
         initial: {
           min_size: [3, 3],
-          max_size: [3, 3],
+          max_size: [6, 6],
           max_exits: 2
         },
         any: {
-          min_size: [2, 2],
+          min_size: [3, 3],
           max_size: [7, 7],
           max_exits: 2
         }
       },
       max_corridor_length: 20,
-      min_corridor_length: 2,
-      corridor_density: 0, //corridors per room
+      min_corridor_length: 5,
+      corridor_density: 0.0, //corridors per room
       symmetric_rooms: false, // exits must be in the center of a wall if true
       interconnects: 0, //extra corridors to connect rooms and make circular paths. not 100% guaranteed
       max_interconnect_length: 10,
-      room_count: 20
+      room_count: 30
     });
     this.dungeon.generate();
     let [ix, iy] = this.dungeon.start_pos;
+
+    this.room = this.dungeon.initial_room;
 
     var phaserGuy = this.add.image(32, 32, "phaserguy");
     phaserGuy.setDepth(1);
@@ -96,6 +98,27 @@ export class GameScene extends Phaser.Scene {
     // configure the camera
     this.cameras.main.setSize(20 * 32, 20 * 32);
     this.cameras.main.startFollow(this.player);
+
+    // handle keyboard input
+    this.input.keyboard.on("keydown", e => {
+      const angles = {
+        ArrowDown: 0,
+        ArrowLeft: 90,
+        ArrowUp: 180,
+        ArrowRight: 270
+      };
+      if (e.code in angles) {
+        const angle = angles[e.code];
+        const exits = this.room.exits.filter(exit => exit[1] == angle);
+        if (exits.length > 0) {
+          let [xy, rot, room] = exits[0];
+          xy = this.room.global_pos(xy);
+          this.moveTo(xy[0] * 32, xy[1] * 32);
+          this.room = room;
+          console.log(room);
+        }
+      }
+    });
   }
 
   moveTo(x, y) {
