@@ -1,8 +1,8 @@
-# base-game
+# Dungeon crawler
 
-A simple starter game
+A simple accessible dungeon crawler game
 
-https://gbishop.github.io/base-game/
+https://gbishop.github.io/crawler
 
 ```
 git clone
