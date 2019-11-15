@@ -24,10 +24,13 @@ export class GameScene extends Phaser.Scene {
       sceneKey: "iso"
     });
 
+    this.load.image("tileset", "assets/cube.png");
+    /*
     this.load.spritesheet("tileset", "assets/gridtiles.png", {
       frameWidth: 32,
       frameHeight: 32
     });
+    */
     // this.load.image("phaserguy", "assets/phaserguy.png");
     this.load.spritesheet("phaserguy", "assets/george.png", {
       frameWidth: 48,
@@ -92,13 +95,13 @@ export class GameScene extends Phaser.Scene {
         let tile = this.add.isoSprite(
           x * 32,
           y * 32,
-          0,
+          grid[y][x] === 0 ? 16 : 0,
           "tileset",
-          this.isoGroup,
-          grid[y][x]
+          this.isoGroup
         );
         if (grid[y][x] !== 0) {
           // walkable
+          tile.tint = 0x99badd;
           tile.setInteractive();
           tile.on("pointerdown", () => {
             this.moveTo(tile.isoX, tile.isoY);
@@ -110,7 +113,7 @@ export class GameScene extends Phaser.Scene {
     var phaserGuy = this.add.isoSprite(
       ix * 32,
       iy * 32,
-      16,
+      32,
       "phaserguy",
       this.isoGroup,
       null
@@ -221,14 +224,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   moveCharacter(path) {
-    // Sets up a list of tweens, one for each tile to walk, that will be chained by the timeline
-    const directions = { x1: "right", "x-1": "left", y1: "down", "y-1": "up" };
-    var tweens = [];
+    // Sets up a list of tweens, one for each tile to walk,
+    // that will be chained by the timeline
+    const tweens = [];
     for (var i = 1; i < path.length; i++) {
-      var ex = path[i].x;
-      var ey = path[i].y;
-      var dx = ex - path[i - 1].x;
-      var dy = ey - path[i - 1].y;
+      const ex = path[i].x;
+      const ey = path[i].y;
+      const dx = ex - path[i - 1].x;
+      const dy = ey - path[i - 1].y;
       var dir = "";
       if (dx < 0) {
         dir = "left";
