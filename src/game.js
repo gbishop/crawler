@@ -43,7 +43,7 @@ export class GameScene extends Phaser.Scene {
     this.iso.projector.origin.setTo(0.5, 0.3);
 
     this.dungeon = new Dungeon({
-      size: [20, 20],
+      size: [100, 100],
       // seed: "abcd", //omit for generated seed
       rooms: {
         initial: {
@@ -92,9 +92,10 @@ export class GameScene extends Phaser.Scene {
     */
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
+        if (grid[y][x] === 0) continue;
         let tile = this.add.isoSprite(
-          x * 32,
-          y * 32,
+          x * 38,
+          y * 38,
           grid[y][x] === 0 ? 16 : 0,
           "tileset",
           this.isoGroup
@@ -182,8 +183,8 @@ export class GameScene extends Phaser.Scene {
     */
 
     // configure the camera
-    // this.cameras.main.setSize(20 * 32, 20 * 32);
-    // this.cameras.main.startFollow(this.player);
+    this.cameras.main.setSize(20 * 32, 20 * 32);
+    this.cameras.main.startFollow(this.player);
 
     // handle keyboard input
     this.input.keyboard.on("keydown", e => {
@@ -195,6 +196,7 @@ export class GameScene extends Phaser.Scene {
       };
       if (e.code in angles) {
         const angle = angles[e.code];
+        console.log(this.room.exits);
         const exits = this.room.exits.filter(exit => exit[1] == angle);
         if (exits.length > 0) {
           let [xy, rot, room] = exits[0];
