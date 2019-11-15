@@ -2,11 +2,13 @@
 import settings from "./settings.js";
 import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
+import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 
 export class GameScene extends Phaser.Scene {
   constructor() {
     super({
-      key: "GameScene"
+      key: "GameScene",
+      mapAdd: { isoPlugin: "iso" }
     });
     this.canvas = document.querySelector("canvas");
     this.score = 0;
@@ -16,7 +18,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("tileset", "assets/gridtiles.png");
+    this.load.scenePlugin({
+      key: "IsoPlugin",
+      url: IsoPlugin,
+      sceneKey: "iso"
+    });
+
+    this.load.spritesheet("tileset", "assets/gridtiles.png", {
+      frameWidth: 32,
+      frameHeight: 32
+    });
     // this.load.image("phaserguy", "assets/phaserguy.png");
     this.load.spritesheet("phaserguy", "assets/george.png", {
       frameWidth: 48,
@@ -25,6 +36,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.isoGroup = this.add.group();
+    this.iso.projector.origin.setTo(0.5, 0.5);
+
     this.dungeon = new Dungeon({
       size: [100, 100],
       // seed: "abcd", //omit for generated seed
@@ -52,6 +66,39 @@ export class GameScene extends Phaser.Scene {
     let [ix, iy] = this.dungeon.start_pos;
 
     this.room = this.dungeon.initial_room;
+
+    // translate into a tilemap
+    let [width, height] = this.dungeon.size;
+    let grid = [];
+    for (let y = 0; y < height; y++) {
+      let row = [];
+      for (let x = 0; x < width; x++) {
+        let t = this.dungeon.walls.get([x, y]);
+        row.push(t ? 0 : 28);
+      }
+      grid.push(row);
+    }
+    /*
+    this.map = this.make.tilemap({
+      data: grid,
+      tileWidth: 32,
+      tileHeight: 32
+    });
+    const tiles = this.map.addTilesetImage("tileset");
+    const layer = this.map.createStaticLayer(0, tiles, 0, 0);
+    */
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        let tile = this.add.isoSprite(
+          x * 32,
+          y * 32,
+          0,
+          "tileset",
+          this.isoGroup,
+          grid[y][x]
+        );
+      }
+    }
 
     var phaserGuy = this.add.sprite(32, 32, "phaserguy");
     phaserGuy.setDepth(1);
@@ -92,25 +139,6 @@ export class GameScene extends Phaser.Scene {
     this.player = phaserGuy;
     this.player.x = ix * 32;
     this.player.y = iy * 32;
-
-    // translate into a tilemap
-    let [width, height] = this.dungeon.size;
-    let grid = [];
-    for (let y = 0; y < height; y++) {
-      let row = [];
-      for (let x = 0; x < width; x++) {
-        let t = this.dungeon.walls.get([x, y]);
-        row.push(t ? 0 : 28);
-      }
-      grid.push(row);
-    }
-    this.map = this.make.tilemap({
-      data: grid,
-      tileWidth: 32,
-      tileHeight: 32
-    });
-    const tiles = this.map.addTilesetImage("tileset");
-    const layer = this.map.createStaticLayer(0, tiles, 0, 0);
 
     this.finder = new EasyStar.js();
     this.finder.setGrid(grid);
