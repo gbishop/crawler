@@ -37,10 +37,10 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.isoGroup = this.add.group();
-    this.iso.projector.origin.setTo(0.5, 0.5);
+    this.iso.projector.origin.setTo(0.5, 0.3);
 
     this.dungeon = new Dungeon({
-      size: [100, 100],
+      size: [20, 20],
       // seed: "abcd", //omit for generated seed
       rooms: {
         initial: {
@@ -60,7 +60,7 @@ export class GameScene extends Phaser.Scene {
       symmetric_rooms: false, // exits must be in the center of a wall if true
       interconnects: 5, //extra corridors to connect rooms and make circular paths. not 100% guaranteed
       max_interconnect_length: 10,
-      room_count: 30
+      room_count: 10
     });
     this.dungeon.generate();
     let [ix, iy] = this.dungeon.start_pos;
@@ -97,13 +97,29 @@ export class GameScene extends Phaser.Scene {
           this.isoGroup,
           grid[y][x]
         );
+        if (grid[y][x] !== 0) {
+          // walkable
+          tile.setInteractive();
+          tile.on("pointerdown", () => {
+            this.moveTo(tile.isoX, tile.isoY);
+          });
+        }
       }
     }
 
-    var phaserGuy = this.add.sprite(32, 32, "phaserguy");
+    var phaserGuy = this.add.isoSprite(
+      ix * 32,
+      iy * 32,
+      5,
+      "phaserguy",
+      this.isoGroup,
+      0
+    );
+    /*
     phaserGuy.setDepth(1);
     phaserGuy.setOrigin(0.1, 0.1);
     phaserGuy.setScale(0.75);
+    */
     this.anims.create({
       key: "down",
       frames: this.anims.generateFrameNumbers("phaserguy", {
@@ -153,16 +169,18 @@ export class GameScene extends Phaser.Scene {
     }
 
     // move on mouse click
+    /*
     this.input.on("pointerup", pointer =>
       this.moveTo(
         this.cameras.main.scrollX + pointer.x,
         this.cameras.main.scrollY + pointer.y
       )
     );
+    */
 
     // configure the camera
-    this.cameras.main.setSize(20 * 32, 20 * 32);
-    this.cameras.main.startFollow(this.player);
+    // this.cameras.main.setSize(20 * 32, 20 * 32);
+    // this.cameras.main.startFollow(this.player);
 
     // handle keyboard input
     this.input.keyboard.on("keydown", e => {
@@ -189,8 +207,8 @@ export class GameScene extends Phaser.Scene {
   moveTo(x, y) {
     var toX = Math.floor(x / 32);
     var toY = Math.floor(y / 32);
-    var fromX = Math.floor(this.player.x / 32);
-    var fromY = Math.floor(this.player.y / 32);
+    var fromX = Math.floor(this.player.isoX / 32);
+    var fromY = Math.floor(this.player.isoY / 32);
 
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
@@ -211,9 +229,10 @@ export class GameScene extends Phaser.Scene {
       var ey = path[i + 1].y;
       tweens.push({
         targets: this.player,
-        x: { value: ex * this.map.tileWidth, duration: 200 },
-        y: { value: ey * this.map.tileHeight, duration: 200 },
+        isoX: { value: ex * 32, duration: 200 },
+        isoY: { value: ey * 32, duration: 200 },
         onStart: (tween, targets) => {
+          /*
           for (let p of tween.data) {
             const k = p.key + Math.sign(p.getEndValue() - this.player[p.key]);
             if (k in directions) {
@@ -221,6 +240,7 @@ export class GameScene extends Phaser.Scene {
               break;
             }
           }
+          */
         }
       });
     }
