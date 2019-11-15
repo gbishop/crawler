@@ -110,10 +110,10 @@ export class GameScene extends Phaser.Scene {
     var phaserGuy = this.add.isoSprite(
       ix * 32,
       iy * 32,
-      5,
+      16,
       "phaserguy",
       this.isoGroup,
-      0
+      null
     );
     /*
     phaserGuy.setDepth(1);
@@ -153,8 +153,8 @@ export class GameScene extends Phaser.Scene {
       repeat: -1
     });
     this.player = phaserGuy;
-    this.player.x = ix * 32;
-    this.player.y = iy * 32;
+    // this.player.x = ix * 32;
+    // this.player.y = iy * 32;
 
     this.finder = new EasyStar.js();
     this.finder.setGrid(grid);
@@ -224,24 +224,27 @@ export class GameScene extends Phaser.Scene {
     // Sets up a list of tweens, one for each tile to walk, that will be chained by the timeline
     const directions = { x1: "right", "x-1": "left", y1: "down", "y-1": "up" };
     var tweens = [];
-    for (var i = 0; i < path.length - 1; i++) {
-      var ex = path[i + 1].x;
-      var ey = path[i + 1].y;
+    for (var i = 1; i < path.length; i++) {
+      var ex = path[i].x;
+      var ey = path[i].y;
+      var dx = ex - path[i - 1].x;
+      var dy = ey - path[i - 1].y;
+      var dir = "";
+      if (dx < 0) {
+        dir = "left";
+      } else if (dx > 0) {
+        dir = "right";
+      } else if (dy < 0) {
+        dir = "up";
+      } else if (dy > 0) {
+        dir = "down";
+      }
+      const start = dir => () => this.player.play(dir, true);
       tweens.push({
         targets: this.player,
         isoX: { value: ex * 32, duration: 200 },
         isoY: { value: ey * 32, duration: 200 },
-        onStart: (tween, targets) => {
-          /*
-          for (let p of tween.data) {
-            const k = p.key + Math.sign(p.getEndValue() - this.player[p.key]);
-            if (k in directions) {
-              this.player.play(directions[k], true);
-              break;
-            }
-          }
-          */
-        }
+        onStart: start(dir)
       });
     }
 
