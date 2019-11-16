@@ -15,7 +15,6 @@ export class GameScene extends Phaser.Scene {
     this.exitIndex = 0;
     this.doorSelection = null;
     this.associatedExit = null;
-    this.priorRoom = null;
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
@@ -184,6 +183,7 @@ export class GameScene extends Phaser.Scene {
 
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
+        console.log(fromX+" "+fromY + " "+toX+" "+toY);
         console.warn("Path was not found.");
       } else {
         this.moveCharacter(path);
@@ -227,12 +227,30 @@ export class GameScene extends Phaser.Scene {
   }
 
   makeChoice() {
-    this.priorRoom = this.room;
+    if (this.doorSelection != null) {
+      this.doorSelection.destroy();
+    }
     console.log("choice made");
     this.exitIndex = 0;
     let [xy, rot, room] = this.associatedExit;
     xy = this.room.global_pos(xy);
-    this.moveTo(xy[0] * 32, xy[1] * 32);
+    let x = xy[0];
+    let y = xy[1];
+    switch (rot) {
+      case 0:
+        y = (y-1);
+        break;
+      case 90:
+        x = (x-1);
+        break;
+      case 180:
+        y = (y+1);
+        break;
+      case 270:
+        x = (x+1);
+        break;
+    }
+    this.moveTo(x*32, y*32);
     this.room = room;
     console.log(room);
   }
@@ -242,17 +260,14 @@ export class GameScene extends Phaser.Scene {
       this.doorSelection.destroy();
     }
     console.log("next choice");
-    console.log(this.priorRoom);
+
     this.exitIndex++;
-    
-    let [xy, rot, room] = this.room.exits.length > 1 ? 
-        this.room.exits[this.exitIndex % this.room.exits.length] 
-      : this.priorRoom.exits[this.exitIndex % this.priorRoom.exits.length];
-    
-    console.log(this.room.exits.length);
+
+    let [xy, rot, room] = this.room.exits[this.exitIndex % this.room.exits.length];
+
     this.associatedExit = [xy, rot, room];
 
-    xy = this.room.exits.length > 1 ? this.room.global_pos(xy) : this.priorRoom.global_pos(xy);
+    xy = this.room.global_pos(xy);
 
     this.doorSelection = this.add.isoSprite(
       xy[0] * 32,
