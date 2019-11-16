@@ -15,6 +15,7 @@ export class GameScene extends Phaser.Scene {
     this.exitIndex = 0;
     this.doorSelection = null;
     this.associatedExit = null;
+    this.priorRoom = null;
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
@@ -226,11 +227,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   makeChoice() {
+    this.priorRoom = this.room;
     console.log("choice made");
     this.exitIndex = 0;
     let [xy, rot, room] = this.associatedExit;
     xy = this.room.global_pos(xy);
-    
     this.moveTo(xy[0] * 32, xy[1] * 32);
     this.room = room;
     console.log(room);
@@ -241,16 +242,18 @@ export class GameScene extends Phaser.Scene {
       this.doorSelection.destroy();
     }
     console.log("next choice");
-    if(this.room.exits.length > 1){
-      this.exitIndex++;
-    } else {
-      // find the adjacent room's exits and use those
-      // since there's only one adjacent room
-      console.log(this.room);
-    }
-    let [xy, rot, room] = this.room.exits[this.exitIndex % this.room.exits.length];
+    console.log(this.priorRoom);
+    this.exitIndex++;
+    
+    let [xy, rot, room] = this.room.exits.length > 1 ? 
+        this.room.exits[this.exitIndex % this.room.exits.length] 
+      : this.priorRoom.exits[this.exitIndex % this.priorRoom.exits.length];
+    
+    console.log(this.room.exits.length);
     this.associatedExit = [xy, rot, room];
-    xy = this.room.global_pos(xy);
+
+    xy = this.room.exits.length > 1 ? this.room.global_pos(xy) : this.priorRoom.global_pos(xy);
+
     this.doorSelection = this.add.isoSprite(
       xy[0] * 32,
       xy[1] * 32,
