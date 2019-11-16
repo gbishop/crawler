@@ -36,6 +36,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.isoGroup = this.add.group();
+    // @ts-ignore
     this.iso.projector.origin.setTo(0.5, 0.3);
 
     this.dungeon = new Dungeon({
@@ -81,6 +82,7 @@ export class GameScene extends Phaser.Scene {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         if (grid[y][x] === 0) continue;
+        // @ts-ignore
         let tile = this.add.isoSprite(
           x * T,
           y * T,
@@ -92,6 +94,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // @ts-ignore
     var phaserGuy = this.add.isoSprite(
       ix * T,
       iy * T,
