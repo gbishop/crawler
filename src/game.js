@@ -230,6 +230,7 @@ export class GameScene extends Phaser.Scene {
     this.exitIndex = 0;
     let [xy, rot, room] = this.associatedExit;
     xy = this.room.global_pos(xy);
+    
     this.moveTo(xy[0] * 32, xy[1] * 32);
     this.room = room;
     console.log(room);
@@ -240,7 +241,13 @@ export class GameScene extends Phaser.Scene {
       this.doorSelection.destroy();
     }
     console.log("next choice");
-    this.exitIndex++;
+    if(this.room.exits.length > 1){
+      this.exitIndex++;
+    } else {
+      // find the adjacent room's exits and use those
+      // since there's only one adjacent room
+      console.log(this.room);
+    }
     let [xy, rot, room] = this.room.exits[this.exitIndex % this.room.exits.length];
     this.associatedExit = [xy, rot, room];
     xy = this.room.global_pos(xy);
