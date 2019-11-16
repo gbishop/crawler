@@ -81,15 +81,7 @@ export class GameScene extends Phaser.Scene {
       }
       grid.push(row);
     }
-    /*
-    this.map = this.make.tilemap({
-      data: grid,
-      tileWidth: 32,
-      tileHeight: 32
-    });
-    const tiles = this.map.addTilesetImage("tileset");
-    const layer = this.map.createStaticLayer(0, tiles, 0, 0);
-    */
+    this.tiles = [];
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         if (grid[y][x] === 0) continue;
@@ -100,14 +92,7 @@ export class GameScene extends Phaser.Scene {
           "tileset",
           this.isoGroup
         );
-        if (grid[y][x] !== 0) {
-          // walkable
-          tile.tint = 0x99badd;
-          tile.setInteractive();
-          tile.on("pointerdown", () => {
-            this.moveTo(tile.isoX, tile.isoY);
-          });
-        }
+        this.tiles.push(tile);
       }
     }
 
@@ -225,6 +210,21 @@ export class GameScene extends Phaser.Scene {
     this.finder.calculate(); // don't fthis, otherwise nothing happens
   }
 
+  lighting() {
+    this.tiles.map(tile => {
+      const px = this.player.isoX;
+      const py = this.player.isoY;
+      const tx = tile.isoX;
+      const ty = tile.isoY;
+      const d = Math.hypot(tx - px, ty - py);
+      const dmin = 30;
+      const dmax = 400;
+      const u = Math.max(0, Math.min(1, (d - dmin) / (dmax - dmin)));
+      const b = (255 * (1 - u)) & 0xff;
+      tile.tint = (b << 16) | (b << 8) | b;
+    });
+  }
+
   moveCharacter(path) {
     // Sets up a list of tweens, one for each tile to walk,
     // that will be chained by the timeline
@@ -249,7 +249,8 @@ export class GameScene extends Phaser.Scene {
         targets: this.player,
         isoX: { value: ex * 32, duration: 200 },
         isoY: { value: ey * 32, duration: 200 },
-        onStart: start(dir)
+        onStart: start(dir),
+        onUpdate: () => this.lighting()
       });
     }
 
