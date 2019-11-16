@@ -4,6 +4,8 @@ import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 
+const T = 38; // tile width and height
+
 export class GameScene extends Phaser.Scene {
   constructor() {
     super({
@@ -25,12 +27,6 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.load.image("tileset", "assets/cube.png");
-    /*
-    this.load.spritesheet("tileset", "assets/gridtiles.png", {
-      frameWidth: 32,
-      frameHeight: 32
-    });
-    */
     // this.load.image("phaserguy", "assets/phaserguy.png");
     this.load.spritesheet("phaserguy", "assets/george.png", {
       frameWidth: 48,
@@ -86,8 +82,8 @@ export class GameScene extends Phaser.Scene {
       for (let x = 0; x < width; x++) {
         if (grid[y][x] === 0) continue;
         let tile = this.add.isoSprite(
-          x * 38,
-          y * 38,
+          x * T,
+          y * T,
           grid[y][x] === 0 ? 16 : 0,
           "tileset",
           this.isoGroup
@@ -97,18 +93,13 @@ export class GameScene extends Phaser.Scene {
     }
 
     var phaserGuy = this.add.isoSprite(
-      ix * 32,
-      iy * 32,
-      32,
+      ix * T,
+      iy * T,
+      T,
       "phaserguy",
       this.isoGroup,
       null
     );
-    /*
-    phaserGuy.setDepth(1);
-    phaserGuy.setOrigin(0.1, 0.1);
-    phaserGuy.setScale(0.75);
-    */
     this.anims.create({
       key: "down",
       frames: this.anims.generateFrameNumbers("phaserguy", {
@@ -142,6 +133,7 @@ export class GameScene extends Phaser.Scene {
       repeat: -1
     });
     this.player = phaserGuy;
+    this.lighting();
     // this.player.x = ix * 32;
     // this.player.y = iy * 32;
 
@@ -157,18 +149,8 @@ export class GameScene extends Phaser.Scene {
     if (settings.sound) {
     }
 
-    // move on mouse click
-    /*
-    this.input.on("pointerup", pointer =>
-      this.moveTo(
-        this.cameras.main.scrollX + pointer.x,
-        this.cameras.main.scrollY + pointer.y
-      )
-    );
-    */
-
     // configure the camera
-    this.cameras.main.setSize(20 * 32, 20 * 32);
+    this.cameras.main.setSize(20 * T, 20 * T);
     this.cameras.main.startFollow(this.player);
 
     // handle keyboard input
@@ -186,7 +168,7 @@ export class GameScene extends Phaser.Scene {
         if (exits.length > 0) {
           let [xy, rot, room] = exits[0];
           xy = this.room.global_pos(xy);
-          this.moveTo(xy[0] * 32, xy[1] * 32);
+          this.moveTo(xy[0] * T, xy[1] * T);
           this.room = room;
           console.log(room);
         }
@@ -195,10 +177,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   moveTo(x, y) {
-    var toX = Math.floor(x / 32);
-    var toY = Math.floor(y / 32);
-    var fromX = Math.floor(this.player.isoX / 32);
-    var fromY = Math.floor(this.player.isoY / 32);
+    var toX = Math.floor(x / T);
+    var toY = Math.floor(y / T);
+    var fromX = Math.floor(this.player.isoX / T);
+    var fromY = Math.floor(this.player.isoY / T);
 
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
@@ -229,6 +211,7 @@ export class GameScene extends Phaser.Scene {
     // Sets up a list of tweens, one for each tile to walk,
     // that will be chained by the timeline
     const tweens = [];
+    const start = dir => () => this.player.play(dir, true);
     for (var i = 1; i < path.length; i++) {
       const ex = path[i].x;
       const ey = path[i].y;
@@ -244,11 +227,10 @@ export class GameScene extends Phaser.Scene {
       } else if (dy > 0) {
         dir = "down";
       }
-      const start = dir => () => this.player.play(dir, true);
       tweens.push({
         targets: this.player,
-        isoX: { value: ex * 32, duration: 200 },
-        isoY: { value: ey * 32, duration: 200 },
+        isoX: { value: ex * T, duration: 200 },
+        isoY: { value: ey * T, duration: 200 },
         onStart: start(dir),
         onUpdate: () => this.lighting()
       });
