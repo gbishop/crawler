@@ -35,19 +35,19 @@ export class GameScene extends Phaser.Scene {
     });
     this.load.spritesheet("phaserguyFrontRight", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Front-Walking-Front-Left.png", {
       frameWidth: 32,
-      frameHeight: 58
+      frameHeight: 57
     });
     this.load.spritesheet("phaserguyFrontLeft", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Front-Walking-Front.png", {
       frameWidth: 32,
-      frameHeight: 58
+      frameHeight: 57
     });
     this.load.spritesheet("phaserguyBackLeft", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Back-Walking-Back-Right.png", {
       frameWidth: 32,
-      frameHeight: 58
+      frameHeight: 57
     });
     this.load.spritesheet("phaserguyBackRight", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Back-Walking-Back.png", {
       frameWidth: 32,
-      frameHeight: 58
+      frameHeight: 57
     });
   }
 
@@ -127,7 +127,7 @@ export class GameScene extends Phaser.Scene {
 
     this.anims.create({
       key: "down",
-      frames: this.anims.generateFrameNumbers("phaserguyFrontRight"),
+      frames: this.anims.generateFrameNumbers("phaserguyFrontLeft"),
       frameRate: 5,
       repeat: -1
     });
@@ -139,13 +139,13 @@ export class GameScene extends Phaser.Scene {
     });
     this.anims.create({
       key: "up",
-      frames: this.anims.generateFrameNumbers("phaserguyFrontLeft"),
+      frames: this.anims.generateFrameNumbers("phaserguyBackRight"),
       frameRate: 5,
       repeat: -1
     });
     this.anims.create({
       key: "right",
-      frames: this.anims.generateFrameNumbers("phaserguyBackRight"),
+      frames: this.anims.generateFrameNumbers("phaserguyFrontRight"),
       frameRate: 5,
       repeat: -1
     });
