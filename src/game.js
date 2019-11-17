@@ -29,11 +29,23 @@ export class GameScene extends Phaser.Scene {
 
     this.load.image("tileset", "assets/cube.png");
     this.load.image("door", "assets/door.png");
-    this.load.spritesheet("george", "assets/george.png", {
+    this.load.spritesheet("g", "assets/george.png", {
       frameWidth: 48,
       frameHeight: 48
     });
-    this.load.spritesheet("phaserguy", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Front-Walking-Front-Left.png", {
+    this.load.spritesheet("phaserguyFrontRight", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Front-Walking-Front-Left.png", {
+      frameWidth: 32,
+      frameHeight: 58
+    });
+    this.load.spritesheet("phaserguyFrontLeft", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Front-Walking-Front.png", {
+      frameWidth: 32,
+      frameHeight: 58
+    });
+    this.load.spritesheet("phaserguyBackLeft", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Back-Walking-Back-Right.png", {
+      frameWidth: 32,
+      frameHeight: 58
+    });
+    this.load.spritesheet("phaserguyBackRight", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Back-Walking-Back.png", {
       frameWidth: 32,
       frameHeight: 58
     });
@@ -108,40 +120,32 @@ export class GameScene extends Phaser.Scene {
       ix * 32,
       iy * 32,
       32,
-      "phaserguy",
+      "phaserguyFrontLeft",
       this.isoGroup,
       null
     );
 
     this.anims.create({
       key: "down",
-      frames: this.anims.generateFrameNumbers("phaserguy", {
-        frames: [0, 4, 8, 12]
-      }),
+      frames: this.anims.generateFrameNumbers("phaserguyFrontRight"),
       frameRate: 5,
       repeat: -1
     });
     this.anims.create({
       key: "left",
-      frames: this.anims.generateFrameNumbers("phaserguy", {
-        frames: [1, 5, 9, 13]
-      }),
+      frames: this.anims.generateFrameNumbers("phaserguyBackLeft"),
       frameRate: 5,
       repeat: -1
     });
     this.anims.create({
       key: "up",
-      frames: this.anims.generateFrameNumbers("phaserguy", {
-        frames: [2, 6, 10, 14]
-      }),
+      frames: this.anims.generateFrameNumbers("phaserguyFrontLeft"),
       frameRate: 5,
       repeat: -1
     });
     this.anims.create({
       key: "right",
-      frames: this.anims.generateFrameNumbers("phaserguy", {
-        frames: [3, 7, 11, 15]
-      }),
+      frames: this.anims.generateFrameNumbers("phaserguyBackRight"),
       frameRate: 5,
       repeat: -1
     });
