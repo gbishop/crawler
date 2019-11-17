@@ -33,19 +33,19 @@ export class GameScene extends Phaser.Scene {
       frameWidth: 48,
       frameHeight: 48
     });
-    this.load.spritesheet("phaserguyFrontRight", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Front-Walking-Front-Left.png", {
+    this.load.spritesheet("phaserguyFrontRight", "assets/Knight/Knight_Front-Walking-Front-Left.png", {
       frameWidth: 32,
       frameHeight: 57
     });
-    this.load.spritesheet("phaserguyFrontLeft", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Front-Walking-Front.png", {
+    this.load.spritesheet("phaserguyFrontLeft", "assets/Knight/Knight_Front-Walking-Front.png", {
       frameWidth: 32,
       frameHeight: 57
     });
-    this.load.spritesheet("phaserguyBackLeft", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Back-Walking-Back-Right.png", {
+    this.load.spritesheet("phaserguyBackLeft", "assets/Knight/Knight_Back-Walking-Back-Right.png", {
       frameWidth: 32,
       frameHeight: 57
     });
-    this.load.spritesheet("phaserguyBackRight", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Back-Walking-Back.png", {
+    this.load.spritesheet("phaserguyBackRight", "assets/Knight/Knight_Back-Walking-Back.png", {
       frameWidth: 32,
       frameHeight: 57
     });
