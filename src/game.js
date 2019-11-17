@@ -12,6 +12,9 @@ export class GameScene extends Phaser.Scene {
     });
     this.canvas = document.querySelector("canvas");
     this.score = 0;
+    this.exitIndex = 0;
+    this.doorSelection = null;
+    this.associatedExit = null;
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
@@ -25,16 +28,26 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.load.image("tileset", "assets/cube.png");
-    /*
-    this.load.spritesheet("tileset", "assets/gridtiles.png", {
-      frameWidth: 32,
-      frameHeight: 32
-    });
-    */
-    // this.load.image("phaserguy", "assets/phaserguy.png");
-    this.load.spritesheet("phaserguy", "assets/george.png", {
+    this.load.image("door", "assets/door.png");
+    this.load.spritesheet("g", "assets/george.png", {
       frameWidth: 48,
       frameHeight: 48
+    });
+    this.load.spritesheet("phaserguyFrontRight", "assets/Knight/Knight_Front-Walking-Front-Left.png", {
+      frameWidth: 32,
+      frameHeight: 57
+    });
+    this.load.spritesheet("phaserguyFrontLeft", "assets/Knight/Knight_Front-Walking-Front.png", {
+      frameWidth: 32,
+      frameHeight: 57
+    });
+    this.load.spritesheet("phaserguyBackLeft", "assets/Knight/Knight_Back-Walking-Back-Right.png", {
+      frameWidth: 32,
+      frameHeight: 57
+    });
+    this.load.spritesheet("phaserguyBackRight", "assets/Knight/Knight_Back-Walking-Back.png", {
+      frameWidth: 32,
+      frameHeight: 57
     });
   }
 
@@ -81,21 +94,13 @@ export class GameScene extends Phaser.Scene {
       }
       grid.push(row);
     }
-    /*
-    this.map = this.make.tilemap({
-      data: grid,
-      tileWidth: 32,
-      tileHeight: 32
-    });
-    const tiles = this.map.addTilesetImage("tileset");
-    const layer = this.map.createStaticLayer(0, tiles, 0, 0);
-    */
+
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         if (grid[y][x] === 0) continue;
         let tile = this.add.isoSprite(
-          x * 38,
-          y * 38,
+          x * 32,
+          y * 32,
           grid[y][x] === 0 ? 16 : 0,
           "tileset",
           this.isoGroup
@@ -115,56 +120,40 @@ export class GameScene extends Phaser.Scene {
       ix * 32,
       iy * 32,
       32,
-      "phaserguy",
+      "phaserguyFrontLeft",
       this.isoGroup,
       null
     );
-    /*
-    phaserGuy.setDepth(1);
-    phaserGuy.setOrigin(0.1, 0.1);
-    phaserGuy.setScale(0.75);
-    */
+
     this.anims.create({
       key: "down",
-      frames: this.anims.generateFrameNumbers("phaserguy", {
-        frames: [0, 4, 8, 12]
-      }),
+      frames: this.anims.generateFrameNumbers("phaserguyFrontLeft"),
       frameRate: 5,
       repeat: -1
     });
     this.anims.create({
       key: "left",
-      frames: this.anims.generateFrameNumbers("phaserguy", {
-        frames: [1, 5, 9, 13]
-      }),
+      frames: this.anims.generateFrameNumbers("phaserguyBackLeft"),
       frameRate: 5,
       repeat: -1
     });
     this.anims.create({
       key: "up",
-      frames: this.anims.generateFrameNumbers("phaserguy", {
-        frames: [2, 6, 10, 14]
-      }),
+      frames: this.anims.generateFrameNumbers("phaserguyBackRight"),
       frameRate: 5,
       repeat: -1
     });
     this.anims.create({
       key: "right",
-      frames: this.anims.generateFrameNumbers("phaserguy", {
-        frames: [3, 7, 11, 15]
-      }),
+      frames: this.anims.generateFrameNumbers("phaserguyFrontRight"),
       frameRate: 5,
       repeat: -1
     });
     this.player = phaserGuy;
-    // this.player.x = ix * 32;
-    // this.player.y = iy * 32;
 
     this.finder = new EasyStar.js();
     this.finder.setGrid(grid);
     this.finder.setAcceptableTiles([28]);
-    // this.finder.enableDiagonals();
-    // this.finder.disableCornerCutting();
 
     this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
 
@@ -172,41 +161,26 @@ export class GameScene extends Phaser.Scene {
     if (settings.sound) {
     }
 
-    // move on mouse click
-    /*
-    this.input.on("pointerup", pointer =>
-      this.moveTo(
-        this.cameras.main.scrollX + pointer.x,
-        this.cameras.main.scrollY + pointer.y
-      )
-    );
-    */
-
     // configure the camera
     this.cameras.main.setSize(20 * 32, 20 * 32);
     this.cameras.main.startFollow(this.player);
 
-    // handle keyboard input
+    // respond to switch input
     this.input.keyboard.on("keydown", e => {
-      const angles = {
-        ArrowDown: 0,
-        ArrowLeft: 90,
-        ArrowUp: 180,
-        ArrowRight: 270
-      };
-      if (e.code in angles) {
-        const angle = angles[e.code];
-        console.log(this.room.exits);
-        const exits = this.room.exits.filter(exit => exit[1] == angle);
-        if (exits.length > 0) {
-          let [xy, rot, room] = exits[0];
-          xy = this.room.global_pos(xy);
-          this.moveTo(xy[0] * 32, xy[1] * 32);
-          this.room = room;
-          console.log(room);
-        }
+      if (e.key == "Enter" || e.key == "ArrowRight") {
+        this.makeChoice();
+      } else if (e.keyCode == 32 || e.key == "ArrowLeft") {
+        this.selectNext();
       }
     });
+
+    // respond to eye gaze user button click
+    document
+      .getElementById("left")
+      .addEventListener("click", e => this.selectNext());
+    document
+      .getElementById("right")
+      .addEventListener("click", e => this.makeChoice());
   }
 
   moveTo(x, y) {
@@ -217,6 +191,7 @@ export class GameScene extends Phaser.Scene {
 
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
+        console.log(fromX+" "+fromY + " "+toX+" "+toY);
         console.warn("Path was not found.");
       } else {
         this.moveCharacter(path);
@@ -257,5 +232,57 @@ export class GameScene extends Phaser.Scene {
       tweens: tweens,
       onComplete: () => this.player.anims.stop()
     });
+  }
+
+  makeChoice() {
+    if (this.doorSelection != null) {
+      this.doorSelection.destroy();
+    }
+    console.log("choice made");
+    this.exitIndex = 0;
+    let [xy, rot, room] = this.associatedExit;
+    xy = this.room.global_pos(xy);
+    let x = xy[0];
+    let y = xy[1];
+    switch (rot) {
+      case 0:
+        y = (y-1);
+        break;
+      case 90:
+        x = (x-1);
+        break;
+      case 180:
+        y = (y+1);
+        break;
+      case 270:
+        x = (x+1);
+        break;
+    }
+    this.moveTo(x*32, y*32);
+    this.room = room;
+    console.log(room);
+  }
+
+  selectNext() {
+    if (this.doorSelection != null) {
+      this.doorSelection.destroy();
+    }
+    console.log("next choice");
+
+    this.exitIndex++;
+
+    let [xy, rot, room] = this.room.exits[this.exitIndex % this.room.exits.length];
+
+    this.associatedExit = [xy, rot, room];
+
+    xy = this.room.global_pos(xy);
+
+    this.doorSelection = this.add.isoSprite(
+      xy[0] * 32,
+      xy[1] * 32,
+      0,
+      "door"
+    );
+    this.doorSelection.setInteractive();
   }
 }
