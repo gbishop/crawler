@@ -29,9 +29,13 @@ export class GameScene extends Phaser.Scene {
 
     this.load.image("tileset", "assets/cube.png");
     this.load.image("door", "assets/door.png");
-    this.load.spritesheet("phaserguy", "assets/george.png", {
+    this.load.spritesheet("george", "assets/george.png", {
       frameWidth: 48,
       frameHeight: 48
+    });
+    this.load.spritesheet("phaserguy", "isometricAssets/1. Characters/Knight/SPRITESHEETS/Knight_Front-Walking-Front-Left.png", {
+      frameWidth: 32,
+      frameHeight: 58
     });
   }
 
@@ -161,7 +165,7 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on("keydown", e => {
       if (e.key == "Enter" || e.key == "ArrowRight") {
         this.makeChoice();
-      } else if (e.key == " " || e.key == "ArrowLeft") {
+      } else if (e.keyCode == 32 || e.key == "ArrowLeft") {
         this.selectNext();
       }
     });
