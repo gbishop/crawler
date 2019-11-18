@@ -4,7 +4,7 @@ import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 
-const T = 32; // tile width and height
+const TileSize = 38; // tile width and height
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -31,42 +31,7 @@ export class GameScene extends Phaser.Scene {
 
     this.load.image("tileset", "assets/cube.png");
     this.load.image("door", "assets/door.png");
-    this.load.spritesheet("g", "assets/george.png", {
-      frameWidth: 48,
-      frameHeight: 48
-    });
-    this.load.spritesheet(
-      "phaserguyFrontRight",
-      "assets/Knight/Knight_Front-Walking-Front-Left.png",
-      {
-        frameWidth: 32,
-        frameHeight: 57
-      }
-    );
-    this.load.spritesheet(
-      "phaserguyFrontLeft",
-      "assets/Knight/Knight_Front-Walking-Front.png",
-      {
-        frameWidth: 32,
-        frameHeight: 57
-      }
-    );
-    this.load.spritesheet(
-      "phaserguyBackLeft",
-      "assets/Knight/Knight_Back-Walking-Back-Right.png",
-      {
-        frameWidth: 32,
-        frameHeight: 57
-      }
-    );
-    this.load.spritesheet(
-      "phaserguyBackRight",
-      "assets/Knight/Knight_Back-Walking-Back.png",
-      {
-        frameWidth: 32,
-        frameHeight: 57
-      }
-    );
+    this.load.atlas("hero", "assets/Knight.png", "assets/Knight.json");
   }
 
   create() {
@@ -76,7 +41,7 @@ export class GameScene extends Phaser.Scene {
 
     this.dungeon = new Dungeon({
       size: [100, 100],
-      // seed: "abcd", //omit for generated seed
+      seed: "abcd", //omit for generated seed
       rooms: {
         initial: {
           min_size: [3, 3],
@@ -119,9 +84,9 @@ export class GameScene extends Phaser.Scene {
         if (grid[y][x] === 0) continue;
         // @ts-ignore
         let tile = this.add.isoSprite(
-          x * T,
-          y * T,
-          grid[y][x] === 0 ? 16 : 0,
+          x * TileSize,
+          y * TileSize,
+          0,
           "tileset",
           this.isoGroup
         );
@@ -131,39 +96,28 @@ export class GameScene extends Phaser.Scene {
 
     // @ts-ignore
     var phaserGuy = this.add.isoSprite(
-      ix * 32,
-      iy * 32,
-      32,
-      "phaserguyFrontLeft",
+      ix * TileSize,
+      iy * TileSize,
+      TileSize,
+      "hero",
       this.isoGroup,
       null
     );
 
-    this.anims.create({
-      key: "down",
-      frames: this.anims.generateFrameNumbers("phaserguyFrontLeft", {}),
-      frameRate: 5,
-      repeat: -1
-    });
-    this.anims.create({
-      key: "left",
-      frames: this.anims.generateFrameNumbers("phaserguyBackLeft", {}),
-      frameRate: 5,
-      repeat: -1
-    });
-    this.anims.create({
-      key: "up",
-      frames: this.anims.generateFrameNumbers("phaserguyBackRight", {}),
-      frameRate: 5,
-      repeat: -1
-    });
-    this.anims.create({
-      key: "right",
-      frames: this.anims.generateFrameNumbers("phaserguyFrontRight", {}),
-      frameRate: 5,
-      repeat: -1
-    });
+    for (var direction of ["x+1", "x-1", "y+1", "y-1"]) {
+      this.anims.create({
+        key: direction,
+        frames: this.anims.generateFrameNames("hero", {
+          prefix: direction + "_",
+          end: 29,
+          zeroPad: 2
+        }),
+        frameRate: 60,
+        repeat: -1
+      });
+    }
     this.player = phaserGuy;
+    // this.player.scale = 0.4;
     this.lighting();
 
     this.finder = new EasyStar.js();
@@ -177,7 +131,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // configure the camera
-    this.cameras.main.setSize(20 * T, 20 * T);
+    this.cameras.main.setSize(20 * TileSize, 20 * TileSize);
     this.cameras.main.startFollow(this.player);
 
     // respond to switch input
@@ -199,10 +153,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   moveTo(x, y) {
-    var toX = Math.floor(x / T);
-    var toY = Math.floor(y / T);
-    var fromX = Math.floor(this.player.isoX / T);
-    var fromY = Math.floor(this.player.isoY / T);
+    var toX = Math.floor(x / TileSize);
+    var toY = Math.floor(y / TileSize);
+    var fromX = Math.floor(this.player.isoX / TileSize);
+    var fromY = Math.floor(this.player.isoY / TileSize);
 
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
@@ -242,18 +196,18 @@ export class GameScene extends Phaser.Scene {
       const dy = ey - path[i - 1].y;
       var dir = "";
       if (dx < 0) {
-        dir = "left";
+        dir = "x-1";
       } else if (dx > 0) {
-        dir = "right";
-      } else if (dy < 0) {
-        dir = "up";
+        dir = "x+1";
       } else if (dy > 0) {
-        dir = "down";
+        dir = "y+1";
+      } else if (dy < 0) {
+        dir = "y-1";
       }
       tweens.push({
         targets: this.player,
-        isoX: { value: ex * T, duration: 200 },
-        isoY: { value: ey * T, duration: 200 },
+        isoX: { value: ex * TileSize, duration: 200 },
+        isoY: { value: ey * TileSize, duration: 200 },
         onStart: start(dir),
         onUpdate: () => this.lighting()
       });
@@ -289,7 +243,7 @@ export class GameScene extends Phaser.Scene {
         x = x + 1;
         break;
     }
-    this.moveTo(x * 32, y * 32);
+    this.moveTo(x * TileSize, y * TileSize);
     this.room = room;
     console.log(room);
   }
@@ -310,7 +264,12 @@ export class GameScene extends Phaser.Scene {
 
     xy = this.room.global_pos(xy);
 
-    this.doorSelection = this.add.isoSprite(xy[0] * 32, xy[1] * 32, 0, "door");
+    this.doorSelection = this.add.isoSprite(
+      xy[0] * TileSize,
+      xy[1] * TileSize,
+      0,
+      "door"
+    );
     this.doorSelection.setInteractive();
   }
 }
