@@ -17,6 +17,8 @@ export class GameScene extends Phaser.Scene {
     this.associatedExit = null;
     this.objectIndex = 0;
     this.objectSelection = null;
+    this.objectTile = null;
+    this.exitSelection = false;
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
@@ -128,8 +130,9 @@ export class GameScene extends Phaser.Scene {
           heights[o],
           o
         );
-        this.room.objectPositions.push([positionOfObject[0], positionOfObject[1]]);
+        room.isoObjects.push(isoObj);
       });
+      console.log("h"+this.room.objectPositions);
     });
 
     for (let y = 0; y < height; y++) {
@@ -216,8 +219,8 @@ export class GameScene extends Phaser.Scene {
     var toY = Math.floor(y / 32);
     var fromX = Math.floor(this.player.isoX / 32);
     var fromY = Math.floor(this.player.isoY / 32);
-    this.room.objectPositions.forEach(p => {
-      this.finder.avoidAdditionalPoint(p[0], p[1]);
+    this.room.isoObjects.forEach(p => {
+      this.finder.avoidAdditionalPoint(p.isoX/32, p.isoY/32);
     })
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
@@ -289,10 +292,12 @@ export class GameScene extends Phaser.Scene {
       }
       this.moveTo(x*32, y*32);
       this.room = room;
-    }
-    if(this.doorSelection != null){
       this.doorSelection.destroy();
       this.doorSelection = null;
+    } else if(this.objectSelection != null){
+      this.moveTo(this.objectTile[0]*32, this.objectTile[1]*32);
+      this.objectSelection.destroy();
+      this.objectSelection = null;
     }
   }
 
@@ -300,9 +305,39 @@ export class GameScene extends Phaser.Scene {
     if (this.doorSelection != null) {
       this.doorSelection.destroy();
       this.doorSelection = null;
+    } else if(this.objectSelection != null){
+      this.objectSelection.destroy();
+      this.objectSelection = null;
     }
     console.log("next choice");
+    this.doObjectSelection();
+    if(this.exitSelection){
+      this.objectSelection.destroy();
+      this.objectSelection = null;
+      this.exitSelection = false;
+      this.doExitSelection();
+    }
+    
+  }
 
+  doObjectSelection(){
+    console.log("here"+this.room.objectPositions);
+    let obj = this.room.isoObjects[this.objectIndex % this.room.isoObjects.length];
+
+    this.objectSelection = this.add.isoSprite(
+      obj.isoX,
+      obj.isoY,
+      0,
+      "door"
+    );
+    this.objectSelection.setInteractive();
+    if(this.objectIndex%this.room.isoObjects.length==0){
+      this.exitSelection = true;
+    }
+    this.objectIndex++;
+  }
+
+  doExitSelection(){
     this.exitIndex++;
 
     let [xy, rot, room] = this.room.exits[this.exitIndex % this.room.exits.length];
