@@ -101,17 +101,33 @@ export class GameScene extends Phaser.Scene {
       }
       grid.push(row);
     }
+
+    var phaserGuy = this.add.isoSprite(
+      ix * 32,
+      iy * 32,
+      32,
+      "phaserguyFrontLeft",
+      this.isoGroup,
+      null
+    );
+
     this.dungeon.children.forEach(room => {
       console.log(room);
+      console.log(room.position);
+      console.log(room.size);
+      console.log(room.objects);
+      let heights = {"Chest1_closed": 40, "Chest2_opened": 40, "fountain":50, "over_grass_flower1": 15, "Rock_1": 30, "Rock_2":30};
+      let positions = this.generateObjectPositions(room);
+      positions = positions.filter(p => p != phaserGuy.xy);
+      /// remove the position of the player
       room.objects.forEach(o => {
+        let positionOfObject = this.getRandomPositionAndRemoveItFromPositions(positions);
         this.add.isoSprite(
-          room.position[0]*32,
-          room.position[1]*32,
-          20,
+          positionOfObject[0]*32,
+          positionOfObject[1]*32,
+          heights[o],
           o
         );
-        console.log("o"+o);
-        console.log(room.objects);
       });
     });
 
@@ -135,15 +151,6 @@ export class GameScene extends Phaser.Scene {
         }
       }
     }
-
-    var phaserGuy = this.add.isoSprite(
-      ix * 32,
-      iy * 32,
-      32,
-      "phaserguyFrontLeft",
-      this.isoGroup,
-      null
-    );
 
     this.anims.create({
       key: "down",
@@ -308,5 +315,30 @@ export class GameScene extends Phaser.Scene {
       "door"
     );
     this.doorSelection.setInteractive();
+  }
+
+  generateObjectPositions(room){
+    // positions is an array of [x,y] as viable locations
+    // to place an object
+    console.log(room);
+    let positions = [];
+    let x = room.position[0]-1;
+    let y = room.position[1]-1;
+    // the i = 2 here is necessary to prevent the exit columns/rows 
+    // from being valid positions
+    for(let i = 2; i < room.size[0]; i++){
+      for(let j = 2; j < room.size[1]; j++){
+        positions.push([x + i, y + j]);
+      }
+    }
+    //TODO:
+    //positions = positions.filter(p => p != this.player.position);
+    return positions;
+  }
+
+  getRandomPositionAndRemoveItFromPositions(positions){
+    let p = positions[Math.floor(Math.random()*positions.length)];
+    positions = positions.filter(pos => pos != p);
+    return p;
   }
 }
