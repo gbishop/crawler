@@ -9,7 +9,7 @@ export default class Room extends Piece {
     options.room_size = options.size;
     options.size = [options.size[0] + 2, options.size[1] + 2];
     options.objects = ["Chest1_closed", "Chest2_opened", "fountain", "Rock_1", "Rock_2", "over_grass_flower1"];
-    options.max_object_count = 5;
+    options.max_object_count = 3;
     options = Object.assign(
       {},
       {

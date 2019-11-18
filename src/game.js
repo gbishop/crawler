@@ -17,7 +17,6 @@ export class GameScene extends Phaser.Scene {
     this.associatedExit = null;
     this.objectIndex = 0;
     this.objectSelection = null;
-    this.objectTile = null;
     this.exitSelection = false;
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
@@ -118,7 +117,7 @@ export class GameScene extends Phaser.Scene {
       console.log(room.position);
       console.log(room.size);
       console.log(room.objects);
-      let heights = {"Chest1_closed": 40, "Chest2_opened": 40, "fountain":50, "over_grass_flower1": 15, "Rock_1": 30, "Rock_2":30};
+      let heights = {"Chest1_closed": 50, "Chest2_opened": 50, "fountain":55, "over_grass_flower1": 25, "Rock_1": 40, "Rock_2":40};
       let positions = this.generateObjectPositions(room);
       positions = positions.filter(p => p != phaserGuy.xy);
       /// remove the position of the player
@@ -273,6 +272,8 @@ export class GameScene extends Phaser.Scene {
       console.log("choice made");
       this.exitIndex = 0;
       let [xy, rot, room] = this.associatedExit;
+
+      console.log(xy);
       xy = this.room.global_pos(xy);
       let x = xy[0];
       let y = xy[1];
@@ -295,9 +296,13 @@ export class GameScene extends Phaser.Scene {
       this.doorSelection.destroy();
       this.doorSelection = null;
     } else if(this.objectSelection != null){
-      this.moveTo(this.objectTile[0]*32, this.objectTile[1]*32);
+      console.log(this.objectSelection);
+      let pos = [this.objectSelection.isoX, this.objectSelection.isoY];
+      pos = this.room.global_pos(pos);
+      this.moveTo(pos[0], pos[1]);
       this.objectSelection.destroy();
       this.objectSelection = null;
+      this.score++;
     }
   }
 
@@ -331,9 +336,11 @@ export class GameScene extends Phaser.Scene {
       "door"
     );
     this.objectSelection.setInteractive();
+
     if(this.objectIndex%this.room.isoObjects.length==0){
       this.exitSelection = true;
     }
+
     this.objectIndex++;
   }
 
