@@ -15,6 +15,8 @@ export class GameScene extends Phaser.Scene {
     this.exitIndex = 0;
     this.doorSelection = null;
     this.associatedExit = null;
+    this.objectIndex = 0;
+    this.objectSelection = null;
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
@@ -49,6 +51,12 @@ export class GameScene extends Phaser.Scene {
       frameWidth: 32,
       frameHeight: 57
     });
+    this.load.image("Chest1_closed", "assets/Chest1_closed.png");
+    this.load.image("Chest2_opened", "assets/Chest2_opened.png");
+    this.load.image("fountain", "assets/fountain.png");
+    this.load.image("Rock_1", "assets/Rock_1.png");
+    this.load.image("Rock_2", "assets/Rock_2.png");
+    this.load.image("over_grass_flower1", "assets/over_grass_flower1.png");
   }
 
   create() {
@@ -81,9 +89,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.dungeon.generate();
     let [ix, iy] = this.dungeon.start_pos;
-    console.log(this.dungeon);
     this.room = this.dungeon.initial_room;
-    console.log(this.room.objects);
     // translate into a tilemap
     let [width, height] = this.dungeon.size;
     let grid = [];
@@ -95,6 +101,19 @@ export class GameScene extends Phaser.Scene {
       }
       grid.push(row);
     }
+    this.dungeon.children.forEach(room => {
+      console.log(room);
+      room.objects.forEach(o => {
+        this.add.image(
+          room.position[0]*32,
+          room.position[1]*32,
+          20,
+          o
+        );
+        console.log("o"+o);
+        console.log(room.objects);
+      });
+    });
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {

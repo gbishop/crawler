@@ -8,7 +8,7 @@ export default class Room extends Piece {
         */
     options.room_size = options.size;
     options.size = [options.size[0] + 2, options.size[1] + 2];
-    options.objects = ["path/to/object", "path/to/other/object", "A", "B", "C", "D"];
+    options.objects = ["Chest1_closed", "Chest2_opened", "fountain", "Rock_1", "Rock_2", "over_grass_flower1"];
     options.max_object_count = 5;
     options = Object.assign(
       {},
@@ -20,9 +20,10 @@ export default class Room extends Piece {
 
     super(options);
     console.log(options.max_object_count);
-    
-    this.objects = this.getRandomList(options.max_object_count*Math.random(), options.objects);
+
+    this.objects = this.getRandomList(options.max_object_count * Math.random(), options.objects);
     console.log(this.objects);
+    
     this.walls.set_square([1, 1], this.room_size, false, true);
 
     if (!this.symmetric) {
@@ -51,14 +52,13 @@ export default class Room extends Piece {
       ];
     }
   }
-
-getRandomList(size, arr){
-  let l = [];
-  while(size > 0){
-    let item = arr[Math.floor(Math.random()*arr.length)];
-    l.push(item);
-    size--;
+  getRandomList(size, arr) {
+    let l = [];
+    while (size > 0) {
+      let item = arr[Math.floor(Math.random() * arr.length)];
+      l.push(item);
+      size--;
+    }
+    return l;
   }
-  return l;
-}
 }
