@@ -4,7 +4,7 @@ import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 
-const T = 38; // tile width and height
+const T = 32; // tile width and height
 
 export class GameScene extends Phaser.Scene {
   constructor() {
