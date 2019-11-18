@@ -369,8 +369,6 @@ export class GameScene extends Phaser.Scene {
         positions.push([x + i, y + j]);
       }
     }
-    //TODO:
-    //positions = positions.filter(p => p != this.player.position);
     return positions;
   }
 
