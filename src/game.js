@@ -104,7 +104,7 @@ export class GameScene extends Phaser.Scene {
     this.dungeon.children.forEach(room => {
       console.log(room);
       room.objects.forEach(o => {
-        this.add.image(
+        this.add.isoSprite(
           room.position[0]*32,
           room.position[1]*32,
           20,
