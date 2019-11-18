@@ -220,7 +220,7 @@ export class GameScene extends Phaser.Scene {
     var fromX = Math.floor(this.player.isoX / 32);
     var fromY = Math.floor(this.player.isoY / 32);
     this.room.isoObjects.filter(p => p != this.currentObject).forEach(p => {
-        this.finder.avoidAdditionalPoint(p.isoX/32, p.isoY/32);
+        this.finder.setAdditionalPointCost(p.isoX/32, p.isoY/32, 2);
     })
     console.log(this.currentObject);
     this.finder.findPath(fromX, fromY, toX, toY, path => {
