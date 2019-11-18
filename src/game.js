@@ -122,12 +122,13 @@ export class GameScene extends Phaser.Scene {
       /// remove the position of the player
       room.objects.forEach(o => {
         let positionOfObject = this.getRandomPositionAndRemoveItFromPositions(positions);
-        this.add.isoSprite(
+        let isoObj = this.add.isoSprite(
           positionOfObject[0]*32,
           positionOfObject[1]*32,
           heights[o],
           o
         );
+        this.room.objectPositions.push([positionOfObject[0], positionOfObject[1]]);
       });
     });
 
@@ -215,7 +216,9 @@ export class GameScene extends Phaser.Scene {
     var toY = Math.floor(y / 32);
     var fromX = Math.floor(this.player.isoX / 32);
     var fromY = Math.floor(this.player.isoY / 32);
-
+    this.room.objectPositions.forEach(p => {
+      this.finder.avoidAdditionalPoint(p[0], p[1]);
+    })
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
         console.log(fromX+" "+fromY + " "+toX+" "+toY);
