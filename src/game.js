@@ -83,7 +83,7 @@ export class GameScene extends Phaser.Scene {
     let [ix, iy] = this.dungeon.start_pos;
     console.log(this.dungeon);
     this.room = this.dungeon.initial_room;
-  
+    console.log(this.room.objects);
     // translate into a tilemap
     let [width, height] = this.dungeon.size;
     let grid = [];
