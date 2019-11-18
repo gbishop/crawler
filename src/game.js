@@ -265,7 +265,11 @@ export class GameScene extends Phaser.Scene {
     console.log(this.dungeon.room_tags);
     this.tweens.timeline({
       tweens: tweens,
-      onComplete: () => this.player.anims.stop()
+      onComplete: () => {
+        this.player.anims.stop();
+        this.currentObject.destroy();
+        this.score++;
+      }
     });
   }
 
@@ -305,8 +309,6 @@ export class GameScene extends Phaser.Scene {
       this.room.isoObjects = this.room.isoObjects.filter(i => i != this.currentObject);
       this.objectSelection.destroy();
       this.objectSelection = null;
-      this.currentObject.destroy();
-      this.score++;
     }
   }
 
@@ -326,7 +328,6 @@ export class GameScene extends Phaser.Scene {
       this.exitSelection = false;
       this.doExitSelection();
     }
-    
   }
 
   doObjectSelection(){
@@ -344,7 +345,6 @@ export class GameScene extends Phaser.Scene {
     if(this.objectIndex%this.room.isoObjects.length==0){
       this.exitSelection = true;
     }
-
     this.objectIndex++;
   }
 
