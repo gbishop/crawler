@@ -167,9 +167,9 @@ export class GameScene extends Phaser.Scene {
 
     // respond to switch input
     this.input.keyboard.on("keydown", e => {
-      if (e.key == "Enter" || e.key == "ArrowRight") {
+      if (e.key == "Enter" || e.key == "ArrowLeft") {
         this.makeChoice();
-      } else if (e.keyCode == 32 || e.key == "ArrowLeft") {
+      } else if (e.keyCode == 32 || e.key == "ArrowRight") {
         this.selectNext();
       }
     });
@@ -177,10 +177,10 @@ export class GameScene extends Phaser.Scene {
     // respond to eye gaze user button click
     document
       .getElementById("left")
-      .addEventListener("click", e => this.selectNext());
+      .addEventListener("click", e => this.makeChoice());
     document
       .getElementById("right")
-      .addEventListener("click", e => this.makeChoice());
+      .addEventListener("click", e => this.selectNext());
   }
 
   moveTo(x, y) {
@@ -235,37 +235,40 @@ export class GameScene extends Phaser.Scene {
   }
 
   makeChoice() {
-    if (this.doorSelection != null) {
-      this.doorSelection.destroy();
+    console.log(this.doorSelection == null);
+    if(this.doorSelection != null){
+      console.log(this.doorSelection);
+      console.log("choice made");
+      this.exitIndex = 0;
+      let [xy, rot, room] = this.associatedExit;
+      xy = this.room.global_pos(xy);
+      let x = xy[0];
+      let y = xy[1];
+      switch (rot) {
+        case 0:
+          y = (y-1);
+          break;
+        case 90:
+          x = (x-1);
+          break;
+        case 180:
+          y = (y+1);
+          break;
+        case 270:
+          x = (x+1);
+          break;
+      }
+      this.moveTo(x*32, y*32);
+      this.room = room;
     }
-    console.log("choice made");
-    this.exitIndex = 0;
-    let [xy, rot, room] = this.associatedExit;
-    xy = this.room.global_pos(xy);
-    let x = xy[0];
-    let y = xy[1];
-    switch (rot) {
-      case 0:
-        y = (y-1);
-        break;
-      case 90:
-        x = (x-1);
-        break;
-      case 180:
-        y = (y+1);
-        break;
-      case 270:
-        x = (x+1);
-        break;
-    }
-    this.moveTo(x*32, y*32);
-    this.room = room;
-    console.log(room);
+    this.doorSelection.destroy();
+    this.doorSelection = null;
   }
 
   selectNext() {
     if (this.doorSelection != null) {
       this.doorSelection.destroy();
+      this.doorSelection = null;
     }
     console.log("next choice");
 
