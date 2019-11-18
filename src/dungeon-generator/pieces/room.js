@@ -1,5 +1,5 @@
 import Piece from "./piece.js";
-import { iter_range } from "../utils/index.js";
+import { iter_range, array_test } from "../utils/index.js";
 
 export default class Room extends Piece {
   constructor(options) {
@@ -8,7 +8,7 @@ export default class Room extends Piece {
         */
     options.room_size = options.size;
     options.size = [options.size[0] + 2, options.size[1] + 2];
-
+    options.objects = ["path/to/object", "path/to/other/object", "A", "B", "C", "D"];
     options = Object.assign(
       {},
       {
@@ -18,6 +18,8 @@ export default class Room extends Piece {
     );
 
     super(options);
+    
+    this.objects = this.getRandomList(options.max_object_count*options.room_size/(options.size[1]+1), options.objects);
 
     this.walls.set_square([1, 1], this.room_size, false, true);
 
@@ -47,4 +49,15 @@ export default class Room extends Piece {
       ];
     }
   }
+
+getRandomList(size, arr){
+  let l = [];
+  while(size > 0){
+    let item = arr[Math.random()*arr.length];
+    arr.remove(item);
+    l.push(item);
+    size--;
+  }
+  return l;
+}
 }
