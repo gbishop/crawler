@@ -76,11 +76,12 @@ export class GameScene extends Phaser.Scene {
       symmetric_rooms: false, // exits must be in the center of a wall if true
       interconnects: 5, //extra corridors to connect rooms and make circular paths. not 100% guaranteed
       max_interconnect_length: 10,
-      room_count: 10
+      room_count: 10,
+      max_object_count: 5,
     });
     this.dungeon.generate();
     let [ix, iy] = this.dungeon.start_pos;
-
+    console.log(this.dungeon);
     this.room = this.dungeon.initial_room;
   
     // translate into a tilemap
