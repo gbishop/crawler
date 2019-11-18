@@ -16,6 +16,7 @@ export class GameScene extends Phaser.Scene {
     this.doorSelection = null;
     this.associatedExit = null;
     this.objectIndex = 0;
+
     this.objectSelection = null;
     this.exitSelection = false;
     // cast this once so I don't have to below
@@ -218,9 +219,10 @@ export class GameScene extends Phaser.Scene {
     var toY = Math.floor(y / 32);
     var fromX = Math.floor(this.player.isoX / 32);
     var fromY = Math.floor(this.player.isoY / 32);
-    this.room.isoObjects.forEach(p => {
-      this.finder.avoidAdditionalPoint(p.isoX/32, p.isoY/32);
+    this.room.isoObjects.filter(p => p != this.currentObject).forEach(p => {
+        this.finder.setAdditionalPointCost(p.isoX/32, p.isoY/32, 2);
     })
+    console.log(this.currentObject);
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
         console.log(fromX+" "+fromY + " "+toX+" "+toY);
@@ -300,8 +302,10 @@ export class GameScene extends Phaser.Scene {
       let pos = [this.objectSelection.isoX, this.objectSelection.isoY];
       pos = this.room.global_pos(pos);
       this.moveTo(pos[0], pos[1]);
+      this.room.isoObjects = this.room.isoObjects.filter(i => i != this.currentObject);
       this.objectSelection.destroy();
       this.objectSelection = null;
+      this.currentObject.destroy();
       this.score++;
     }
   }
@@ -327,11 +331,11 @@ export class GameScene extends Phaser.Scene {
 
   doObjectSelection(){
     console.log("here"+this.room.objectPositions);
-    let obj = this.room.isoObjects[this.objectIndex % this.room.isoObjects.length];
+    this.currentObject = this.room.isoObjects[this.objectIndex % this.room.isoObjects.length];
 
     this.objectSelection = this.add.isoSprite(
-      obj.isoX,
-      obj.isoY,
+      this.currentObject.isoX,
+      this.currentObject.isoY,
       0,
       "door"
     );
