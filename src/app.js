@@ -20,7 +20,8 @@ const config = {
       debug: false
     }
   },
-  backgroundColor: "#101010"
+  backgroundColor: "#101010",
+  seed: ["abc", "def"]
 };
 
 export class MyGame extends Phaser.Game {

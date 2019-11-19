@@ -3,7 +3,6 @@ import settings from "./settings.js";
 import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
-import { shuffle } from "./helpers.js";
 
 const TileSize = 32; // tile width and height
 
@@ -15,13 +14,10 @@ export class GameScene extends Phaser.Scene {
     });
     this.canvas = document.querySelector("canvas");
     this.score = 0;
-    this.exitIndex = 0;
-    this.doorSelection = null;
-    this.associatedExit = null;
-    this.objectIndex = 0;
+    this.targetIndex = -1;
 
-    this.objectSelection = null;
-    this.exitSelection = false;
+    this.selectionIndicator = null;
+
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
@@ -101,19 +97,19 @@ export class GameScene extends Phaser.Scene {
     }
     this.tiles = [];
     this.dungeon.children.forEach(room => {
-      console.log(room);
-      console.log(room.position);
-      console.log(room.size);
-      room.objects = shuffle(this.RandomlyPlacedObjects).slice(
+      // console.log(room);
+      // console.log(room.position);
+      // console.log(room.size);
+      room.objects = Phaser.Math.RND.shuffle(this.RandomlyPlacedObjects).slice(
         0,
         Phaser.Math.RND.between(0, 3)
       );
-      console.log(room.objects);
+      // console.log(room.objects);
       let heights = {
         Chest1_closed: 50,
         Chest2_opened: 50,
         fountain: 55,
-        over_grass_flower1: 25,
+        over_grass_flower1: 40,
         Rock_1: 40,
         Rock_2: 40
       };
@@ -213,7 +209,7 @@ export class GameScene extends Phaser.Scene {
       .addEventListener("click", e => this.selectNext());
   }
 
-  moveTo(x, y) {
+  moveTo(x, y, callback) {
     var toX = Math.floor(x / TileSize);
     var toY = Math.floor(y / TileSize);
     var fromX = Math.floor(this.player.isoX / TileSize);
@@ -227,13 +223,13 @@ export class GameScene extends Phaser.Scene {
           2
         );
       });
-    console.log(this.currentObject);
+    // console.log(this.currentObject);
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
         console.log(fromX + " " + fromY + " " + toX + " " + toY);
         console.warn("Path was not found.");
       } else {
-        this.moveCharacter(path);
+        this.moveCharacter(path, callback);
       }
     });
     this.finder.calculate(); // don't fthis, otherwise nothing happens
@@ -255,7 +251,7 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  moveCharacter(path) {
+  moveCharacter(path, callback) {
     // Sets up a list of tweens, one for each tile to walk,
     // that will be chained by the timeline
     const tweens = [];
@@ -283,123 +279,88 @@ export class GameScene extends Phaser.Scene {
         onUpdate: () => this.lighting()
       });
     }
-    console.log(this.dungeon.rooms);
-    console.log(this.dungeon.room_tags);
+    // console.log(this.dungeon.rooms);
+    // console.log(this.dungeon.room_tags);
     this.tweens.timeline({
       tweens: tweens,
-      onComplete: () => this.player.anims.stop()
+      onComplete: () => {
+        this.player.anims.stop();
+        if (callback) {
+          callback();
+        }
+      }
     });
   }
 
   makeChoice() {
     console.log("make choice");
-    if (this.doorSelection != null) {
-      console.log("choice made");
-      this.exitIndex = 0;
-      let [xy, rot, room] = this.associatedExit;
+    if (this.selectionIndicator) {
+      this.selectionIndicator.destroy();
+    }
+    if (this.target) {
+      if ("exit" in this.target) {
+        console.log("door selected");
+        let [xy, rot, room] = this.target.exit;
 
-      console.log(xy);
-      xy = this.room.global_pos(xy);
-      let x = xy[0];
-      let y = xy[1];
-      switch (rot) {
-        case 0:
-          y = y - 1;
-          break;
-        case 90:
-          x = x - 1;
-          break;
-        case 180:
-          y = y + 1;
-          break;
-        case 270:
-          x = x + 1;
-          break;
+        console.log("door", xy[0], xy[1], rot);
+        xy = this.room.global_pos(xy);
+        let step = { 0: [0, 1], 90: [-1, 0], 180: [0, -1], 270: [1, 0] }[rot];
+        let x = xy[0] + step[0];
+        let y = xy[1] + step[1];
+        console.log("gp", x, y);
+        this.moveTo(x * TileSize, y * TileSize, () => {
+          this.room = room;
+          this.targetIndex = -1;
+          this.target = null;
+        });
+      } else {
+        console.log("object selected", this.target.object);
+        let pos = [this.target.object.isoX, this.target.object.isoY];
+        pos = this.room.global_pos(pos);
+        this.moveTo(pos[0], pos[1], () => (this.target.object.visible = false));
+        this.score++;
       }
-      this.moveTo(x * TileSize, y * TileSize);
-      this.room = room;
-      this.doorSelection.destroy();
-      this.doorSelection = null;
-    } else if (this.objectSelection != null) {
-      console.log(this.objectSelection);
-      let pos = [this.objectSelection.isoX, this.objectSelection.isoY];
-      pos = this.room.global_pos(pos);
-      this.moveTo(pos[0], pos[1]);
-      this.room.isoObjects = this.room.isoObjects.filter(
-        i => i != this.currentObject
-      );
-      this.objectSelection.destroy();
-      this.objectSelection = null;
-      this.currentObject.destroy();
-      this.score++;
     }
   }
 
   selectNext() {
-    if (this.doorSelection != null) {
-      this.doorSelection.destroy();
-      this.doorSelection = null;
-    } else if (this.objectSelection != null) {
-      this.objectSelection.destroy();
-      this.objectSelection = null;
+    // get the visible objects in the room
+    const targets = [];
+    this.room.isoObjects
+      .filter(object => object.visible)
+      .forEach(object => targets.push({ object }));
+    this.room.exits.forEach(exit => {
+      let [xy, rot, room] = exit;
+      xy = this.room.global_pos(xy);
+      console.log("exit", xy);
+      const tiles = this.tiles.filter(
+        t => t.isoX / TileSize == xy[0] && t.isoY / TileSize == xy[1]
+      );
+      if (tiles.length) {
+        targets.push({ object: tiles[0], exit });
+      }
+    });
+    console.log("targets", targets);
+    // choose one based on the index
+    this.targetIndex += 1;
+    this.target = targets[this.targetIndex % targets.length];
+    if (this.selectionIndicator) {
+      this.selectionIndicator.destroy();
     }
-    console.log("next choice");
-    this.doObjectSelection();
-    if (this.exitSelection) {
-      this.objectSelection.destroy();
-      this.objectSelection = null;
-      this.exitSelection = false;
-      this.doExitSelection();
-    }
-  }
-
-  doObjectSelection() {
-    console.log("here", this.room.objectPositions);
-    this.currentObject = this.room.isoObjects[
-      this.objectIndex % this.room.isoObjects.length
-    ];
-
     // @ts-ignore
-    this.objectSelection = this.add.isoSprite(
-      this.currentObject.isoX,
-      this.currentObject.isoY,
-      0,
+    this.selectionIndicator = this.add.isoSprite(
+      this.target.object.isoX,
+      this.target.object.isoY,
+      TileSize / 2,
       "door"
     );
-    this.objectSelection.setInteractive();
-
-    if (this.objectIndex % this.room.isoObjects.length == 0) {
-      this.exitSelection = true;
-    }
-
-    this.objectIndex++;
-  }
-
-  doExitSelection() {
-    this.exitIndex++;
-
-    let [xy, rot, room] = this.room.exits[
-      this.exitIndex % this.room.exits.length
-    ];
-
-    this.associatedExit = [xy, rot, room];
-
-    xy = this.room.global_pos(xy);
-
-    // @ts-ignore
-    this.doorSelection = this.add.isoSprite(
-      xy[0] * TileSize,
-      xy[1] * TileSize,
-      0,
-      "door"
-    );
-    this.doorSelection.setInteractive();
+    this.selectionIndicator.alpha = 0.8;
   }
 
   generateObjectPositions(room) {
     // positions is an array of [x,y] as viable locations
     // to place an object
-    console.log(room);
+    // console.log(room);
     let positions = [];
     let x = room.position[0] - 1;
     let y = room.position[1] - 1;
@@ -414,7 +375,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   getRandomPositionAndRemoveItFromPositions(positions) {
-    let p = positions[Math.floor(Math.random() * positions.length)];
+    let p = positions[Phaser.Math.RND.between(0, positions.length - 1)];
     positions = positions.filter(pos => pos != p);
     return p;
   }
