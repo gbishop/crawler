@@ -4,7 +4,7 @@ import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 
-const TileSize = 38; // tile width and height
+const TileSize = 32; // tile width and height
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -29,7 +29,7 @@ export class GameScene extends Phaser.Scene {
       sceneKey: "iso"
     });
 
-    this.load.image("tileset", "assets/cube.png");
+    this.load.image("ground", "assets/ground.png");
     this.load.image("door", "assets/door.png");
     this.load.atlas("hero", "assets/Knight.png", "assets/Knight.json");
   }
@@ -37,7 +37,8 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.isoGroup = this.add.group();
     // @ts-ignore
-    this.iso.projector.origin.setTo(0.5, 0.3);
+    // isometric projection
+    this.iso.projector.projectionAngle = Math.PI / 6; // 30 degrees
 
     this.dungeon = new Dungeon({
       size: [100, 100],
@@ -87,18 +88,22 @@ export class GameScene extends Phaser.Scene {
           x * TileSize,
           y * TileSize,
           0,
-          "tileset",
+          "ground",
           this.isoGroup
         );
+        // 493 is width of the image
+        // There are 12 empty pixels on either side (2*12 = 24)
+        // The isometric projection is sqrt(3) tiles the edge width
+        tile.scale = (TileSize * Math.sqrt(3)) / (493 - 24);
         this.tiles.push(tile);
       }
     }
 
     // @ts-ignore
-    var phaserGuy = this.add.isoSprite(
+    var hero = this.add.isoSprite(
       ix * TileSize,
       iy * TileSize,
-      TileSize,
+      TileSize / Math.sqrt(2),
       "hero",
       this.isoGroup,
       null
@@ -116,7 +121,7 @@ export class GameScene extends Phaser.Scene {
         repeat: -1
       });
     }
-    this.player = phaserGuy;
+    this.player = hero;
     // this.player.scale = 0.4;
     this.lighting();
 
@@ -170,6 +175,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   lighting() {
+    return;
     this.tiles.map(tile => {
       const px = this.player.isoX;
       const py = this.player.isoY;
