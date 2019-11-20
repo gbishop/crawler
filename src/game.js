@@ -3,6 +3,7 @@ import settings from "./settings.js";
 import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
+import { sortByDistance } from "./helpers.js";
 
 const TileSize = 38; // tile width and height
 
@@ -316,28 +317,38 @@ export class GameScene extends Phaser.Scene {
         let pos = [this.target.object.isoX, this.target.object.isoY];
         pos = this.room.global_pos(pos);
         this.moveTo(pos[0], pos[1], () => (this.target.object.visible = false));
+        this.room.isoObjects = this.room.isoObjects.filter(
+          o => o !== this.target.object
+        );
         this.score++;
       }
     }
   }
 
   selectNext() {
-    // get the visible objects in the room
-    const targets = [];
-    this.room.isoObjects
-      .filter(object => object.visible)
-      .forEach(object => targets.push({ object }));
-    this.room.exits.forEach(exit => {
-      let [xy, rot, room] = exit;
-      xy = this.room.global_pos(xy);
-      console.log("exit", xy);
-      const tiles = this.tiles.filter(
-        t => t.isoX / TileSize == xy[0] && t.isoY / TileSize == xy[1]
-      );
-      if (tiles.length) {
-        targets.push({ object: tiles[0], exit });
-      }
+    // get objects in the room
+    let px = this.player.isoX;
+    let py = this.player.isoY;
+    let targets = this.room.isoObjects.map(object => {
+      return { object, x: object.isoX, y: object.isoY };
     });
+    sortByDistance(targets, px, py);
+    let exits = this.room.exits.map(exit => {
+      let [xy, rot, room] = exit;
+      const [x, y] = this.room.global_pos(xy);
+      console.log("exit", x, y);
+      const tiles = this.tiles.filter(
+        t => t.isoX / TileSize == x && t.isoY / TileSize == y
+      );
+      return {
+        object: tiles[0],
+        exit,
+        x: tiles[0].isoX,
+        y: tiles[0].isoY
+      };
+    });
+    sortByDistance(exits, px, py);
+    targets = [...targets, ...exits];
     console.log("targets", targets);
     // choose one based on the index
     this.targetIndex += 1;
