@@ -4,7 +4,7 @@ import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 
-const TileSize = 32; // tile width and height
+const TileSize = 38; // tile width and height
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -30,7 +30,7 @@ export class GameScene extends Phaser.Scene {
       sceneKey: "iso"
     });
 
-    this.load.image("ground", "assets/ground.png");
+    this.load.image("ground", "assets/cube.png");
     this.load.image("door", "assets/door.png");
     this.load.atlas("hero", "assets/Knight.png", "assets/Knight.json");
     this.load.image("Chest1_closed", "assets/Chest1_closed.png");
@@ -54,7 +54,7 @@ export class GameScene extends Phaser.Scene {
     this.isoGroup = this.add.group();
     // @ts-ignore
     // isometric projection
-    this.iso.projector.projectionAngle = Math.PI / 6; // 30 degrees
+    // this.iso.projector.projectionAngle = Math.PI / 6; // 30 degrees
 
     this.dungeon = new Dungeon({
       size: [100, 100],
@@ -105,10 +105,7 @@ export class GameScene extends Phaser.Scene {
       // console.log(room);
       // console.log(room.position);
       // console.log(room.size);
-      room.objects = Phaser.Math.RND.shuffle(this.RandomlyPlacedObjects).slice(
-        0,
-        Phaser.Math.RND.between(0, 3)
-      );
+      let objects = [...Phaser.Math.RND.shuffle(this.RandomlyPlacedObjects)];
       // console.log(room.objects);
       let heights = {
         Chest1_closed: 50,
@@ -119,22 +116,32 @@ export class GameScene extends Phaser.Scene {
         Rock_2: 40
       };
       let positions = this.generateObjectPositions(room);
-      positions = positions.filter(p => p != [ix, iy]);
-      /// remove the position of the player
+      positions = positions.filter(([px, py]) => px != ix || py != iy);
+      positions = Phaser.Math.RND.shuffle(positions);
+      const nobjects = Phaser.Math.RND.between(0, 3);
       room.isoObjects = [];
-      room.objects.forEach(o => {
-        let positionOfObject = this.getRandomPositionAndRemoveItFromPositions(
-          positions
-        );
+      for (let i = 0; i < nobjects; i++) {
+        if (!positions.length) {
+          break;
+        }
+        /// remove the position of the player
+        let o = objects.pop();
+        let [ox, oy] = positions.pop();
+        console.log("o", o, ox, oy);
         // @ts-ignore
         let isoObj = this.add.isoSprite(
-          positionOfObject[0] * TileSize,
-          positionOfObject[1] * TileSize,
-          heights[o] - 32,
+          ox * TileSize,
+          oy * TileSize,
+          0, // heights[o] - TileSize,
           o
         );
+        this.finder.setAdditionalPointCost(ox, oy, 20);
         room.isoObjects.push(isoObj);
-      });
+        // eliminate this position and its neighbors
+        positions = positions.filter(
+          ([px, py]) => Math.hypot(px - ox, py - oy) > 1
+        );
+      }
     });
 
     for (let y = 0; y < height; y++) {
@@ -144,14 +151,13 @@ export class GameScene extends Phaser.Scene {
         let tile = this.add.isoSprite(
           x * TileSize,
           y * TileSize,
-          0,
+          -TileSize,
           "ground",
           this.isoGroup
         );
         // 493 is width of the image
         // There are 12 empty pixels on either side (2*12 = 24)
         // The isometric projection is sqrt(3) tiles the edge width
-        tile.scale = (TileSize * Math.sqrt(3)) / (493 - 24);
         this.tiles.push(tile);
       }
     }
@@ -160,7 +166,7 @@ export class GameScene extends Phaser.Scene {
     var hero = this.add.isoSprite(
       ix * TileSize,
       iy * TileSize,
-      TileSize / Math.sqrt(2),
+      0,
       "hero",
       this.isoGroup,
       null
@@ -215,15 +221,6 @@ export class GameScene extends Phaser.Scene {
     var toY = Math.floor(y / TileSize);
     var fromX = Math.floor(this.player.isoX / TileSize);
     var fromY = Math.floor(this.player.isoY / TileSize);
-    this.room.isoObjects
-      .filter(p => p != this.currentObject)
-      .forEach(p => {
-        this.finder.setAdditionalPointCost(
-          p.isoX / TileSize,
-          p.isoY / TileSize,
-          20
-        );
-      });
     // console.log(this.currentObject);
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
@@ -352,7 +349,7 @@ export class GameScene extends Phaser.Scene {
     this.selectionIndicator = this.add.isoSprite(
       this.target.object.isoX,
       this.target.object.isoY,
-      TileSize / 2,
+      0,
       "door"
     );
     this.selectionIndicator.alpha = 0.8;
@@ -363,21 +360,15 @@ export class GameScene extends Phaser.Scene {
     // to place an object
     // console.log(room);
     let positions = [];
-    let x = room.position[0] - 1;
-    let y = room.position[1] - 1;
+    let x = room.position[0] + 1;
+    let y = room.position[1] + 1;
     // the i = 2 here is necessary to prevent the exit columns/rows
     // from being valid positions
-    for (let i = 2; i < room.size[0]; i++) {
-      for (let j = 2; j < room.size[1]; j++) {
+    for (let i = 1; i < room.room_size[0] - 1; i++) {
+      for (let j = 1; j < room.room_size[1] - 1; j++) {
         positions.push([x + i, y + j]);
       }
     }
     return positions;
-  }
-
-  getRandomPositionAndRemoveItFromPositions(positions) {
-    let p = positions[Phaser.Math.RND.between(0, positions.length - 1)];
-    positions = positions.filter(pos => pos != p);
-    return p;
   }
 }
