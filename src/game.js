@@ -95,6 +95,11 @@ export class GameScene extends Phaser.Scene {
       }
       grid.push(row);
     }
+
+    this.finder = new EasyStar.js();
+    this.finder.setGrid(grid);
+    this.finder.setAcceptableTiles([28]);
+
     this.tiles = [];
     this.dungeon.children.forEach(room => {
       // console.log(room);
@@ -177,10 +182,6 @@ export class GameScene extends Phaser.Scene {
     // this.player.scale = 0.4;
     this.lighting();
 
-    this.finder = new EasyStar.js();
-    this.finder.setGrid(grid);
-    this.finder.setAcceptableTiles([28]);
-
     this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
 
     // control sound
@@ -220,7 +221,7 @@ export class GameScene extends Phaser.Scene {
         this.finder.setAdditionalPointCost(
           p.isoX / TileSize,
           p.isoY / TileSize,
-          2
+          20
         );
       });
     // console.log(this.currentObject);
@@ -304,7 +305,7 @@ export class GameScene extends Phaser.Scene {
 
         console.log("door", xy[0], xy[1], rot);
         xy = this.room.global_pos(xy);
-        let step = { 0: [0, 1], 90: [-1, 0], 180: [0, -1], 270: [1, 0] }[rot];
+        let step = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
         let x = xy[0] + step[0];
         let y = xy[1] + step[1];
         console.log("gp", x, y);
