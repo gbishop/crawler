@@ -215,18 +215,15 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.selectionIndicator, false, 0.05, 0.05);
     this.cameras.main.setDeadzone(300, 300);
 
-    // make the selection box follow the player
-    this.player.on("update", () => {
-      this.selectionIndicator.isoX = this.player.isoX;
-      this.selectionIndicator.isoY = this.player.isoY;
-    });
-
     // respond to switch input
     this.input.keyboard.on("keydown", e => {
       if (e.key == "Enter" || e.key == "ArrowLeft") {
         this.makeChoice();
       } else if (e.key == "Space" || e.key == "ArrowRight") {
         this.selectNext();
+      } else if (e.key == "A") {
+        console.log("autoplay");
+        this.autoPlay();
       }
     });
 
@@ -239,21 +236,24 @@ export class GameScene extends Phaser.Scene {
       .addEventListener("click", e => this.selectNext());
   }
 
-  moveTo(x, y, callback) {
-    var toX = Math.floor(x / TileSize);
-    var toY = Math.floor(y / TileSize);
-    var fromX = Math.floor(this.player.isoX / TileSize);
-    var fromY = Math.floor(this.player.isoY / TileSize);
-    // console.log(this.currentObject);
-    this.finder.findPath(fromX, fromY, toX, toY, path => {
-      if (path === null) {
-        // console.log(fromX + " " + fromY + " " + toX + " " + toY);
-        console.warn("Path was not found.");
-      } else {
-        this.moveCharacter(path, callback);
-      }
+  moveTo(x, y) {
+    return new Promise((resolve, reject) => {
+      var toX = Math.floor(x / TileSize);
+      var toY = Math.floor(y / TileSize);
+      var fromX = Math.floor(this.player.isoX / TileSize);
+      var fromY = Math.floor(this.player.isoY / TileSize);
+      // console.log(this.currentObject);
+      this.finder.findPath(fromX, fromY, toX, toY, path => {
+        if (path === null) {
+          // console.log(fromX + " " + fromY + " " + toX + " " + toY);
+          console.warn("Path was not found.");
+          reject();
+        } else {
+          this.moveCharacter(path).then(resolve);
+        }
+      });
+      this.finder.calculate(); // don't fthis, otherwise nothing happens
     });
-    this.finder.calculate(); // don't fthis, otherwise nothing happens
   }
 
   lighting() {
@@ -272,89 +272,110 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  moveCharacter(path, callback) {
+  moveCharacter(path) {
     // Sets up a list of tweens, one for each tile to walk,
     // that will be chained by the timeline
-    const tweens = [];
-    const start = dir => () => this.player.play(dir, true);
-    for (var i = 1; i < path.length; i++) {
-      const ex = path[i].x;
-      const ey = path[i].y;
-      const dx = ex - path[i - 1].x;
-      const dy = ey - path[i - 1].y;
-      var dir = "";
-      if (dx < 0) {
-        dir = "x-1";
-      } else if (dx > 0) {
-        dir = "x+1";
-      } else if (dy > 0) {
-        dir = "y+1";
-      } else if (dy < 0) {
-        dir = "y-1";
-      }
-      tweens.push({
-        targets: this.player,
-        isoX: { value: ex * TileSize, duration: 200 },
-        isoY: { value: ey * TileSize, duration: 200 },
-        onStart: start(dir),
-        onUpdate: () => this.lighting()
-      });
-    }
-    // console.log(this.dungeon.rooms);
-    // console.log(this.dungeon.room_tags);
-    this.tweens.timeline({
-      tweens: tweens,
-      onComplete: () => {
-        this.player.anims.stop();
-        if (callback) {
-          callback();
+    return new Promise((resolve, reject) => {
+      const tweens = [];
+      const start = dir => () => this.player.play(dir, true);
+      for (var i = 1; i < path.length; i++) {
+        const ex = path[i].x;
+        const ey = path[i].y;
+        const dx = ex - path[i - 1].x;
+        const dy = ey - path[i - 1].y;
+        var dir = "";
+        if (dx < 0) {
+          dir = "x-1";
+        } else if (dx > 0) {
+          dir = "x+1";
+        } else if (dy > 0) {
+          dir = "y+1";
+        } else if (dy < 0) {
+          dir = "y-1";
         }
+        tweens.push({
+          targets: [this.player, this.selectionIndicator],
+          isoX: { value: ex * TileSize, duration: 200 },
+          isoY: { value: ey * TileSize, duration: 200 },
+          onStart: start(dir),
+          onUpdate: () => this.lighting()
+        });
+      }
+      // console.log(this.dungeon.rooms);
+      // console.log(this.dungeon.room_tags);
+      this.tweens.timeline({
+        tweens: tweens,
+        onComplete: () => {
+          this.player.anims.stop();
+          resolve();
+        }
+      });
+    });
+  }
+
+  async autoPlay() {
+    const roomsToVisit = [this.room];
+    const roomsVisited = [];
+    while (roomsToVisit.length) {
+      this.room = roomsToVisit.pop();
+      roomsVisited.push(this.room);
+      const targets = this.getTargets();
+      for (const target of targets) {
+        if ("exit" in target) {
+          const [xy, rot, room] = target.exit;
+          if (roomsVisited.indexOf(room) >= 0) {
+            continue;
+          } else {
+            roomsToVisit.push(room);
+            continue;
+          }
+        }
+        await this.visitChoice(target);
+      }
+    }
+  }
+
+  async makeChoice() {
+    if (this.target) {
+      this.targetIndex = -1;
+      this.selectionIndicator.visible = false;
+      await this.visitChoice(this.target);
+      this.target = null;
+    }
+  }
+
+  visitChoice(target) {
+    return new Promise((resolve, reject) => {
+      if ("exit" in target) {
+        let [xy, rot, room] = target.exit;
+
+        // console.log("door", xy[0], xy[1], rot);
+        xy = this.room.global_pos(xy);
+        let step = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
+        let x = xy[0] + step[0];
+        let y = xy[1] + step[1];
+        // console.log("gp", x, y);
+        this.moveTo(x * TileSize, y * TileSize).then(() => {
+          this.room = room;
+          resolve();
+        });
+      } else {
+        // console.log("object selected", this.target.object);
+        let pos = [target.object.isoX, target.object.isoY];
+        pos = this.room.global_pos(pos);
+        this.moveTo(pos[0], pos[1]).then(() => {
+          target.object.visible = false;
+          this.room.isoObjects = this.room.isoObjects.filter(
+            o => o !== target.object
+          );
+          this.score++;
+          resolve();
+        });
       }
     });
   }
 
-  makeChoice() {
-    console.log("make choice");
-    this.selectionIndicator.visible = false;
-    if (this.target) {
-      this.targetIndex = -1;
-      if ("exit" in this.target) {
-        // tween the camera back over to the player
-        this.tweens.add({
-          targets: this.selectionIndicator,
-          isoX: this.player.isoX,
-          isoY: this.player.isoY,
-          duration: 500,
-          onComplete: () => {
-            let [xy, rot, room] = this.target.exit;
-
-            // console.log("door", xy[0], xy[1], rot);
-            xy = this.room.global_pos(xy);
-            let step = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
-            let x = xy[0] + step[0];
-            let y = xy[1] + step[1];
-            // console.log("gp", x, y);
-            this.moveTo(x * TileSize, y * TileSize, () => {
-              this.room = room;
-              this.target = null;
-            });
-          }
-        });
-        // console.log("door selected");
-      } else {
-        // console.log("object selected", this.target.object);
-        let pos = [this.target.object.isoX, this.target.object.isoY];
-        pos = this.room.global_pos(pos);
-        this.moveTo(pos[0], pos[1], () => (this.target.object.visible = false));
-        this.room.isoObjects = this.room.isoObjects.filter(
-          o => o !== this.target.object
-        );
-        this.score++;
-      }
-    }
-  }
-
-  selectNext() {
+  getTargets() {
     // get objects in the room
     let px = this.player.isoX;
     let py = this.player.isoY;
@@ -378,6 +399,11 @@ export class GameScene extends Phaser.Scene {
     });
     sortByDistance(exits, px, py);
     targets = [...targets, ...exits];
+    return targets;
+  }
+
+  selectNext() {
+    const targets = this.getTargets();
     // console.log("targets", targets);
     // choose one based on the index
     this.targetIndex += 1;
