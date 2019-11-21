@@ -382,19 +382,10 @@ export class GameScene extends Phaser.Scene {
     // choose one based on the index
     this.targetIndex += 1;
     this.target = targets[this.targetIndex % targets.length];
-    if (false && !this.selectionIndicator.visible) {
-      // position first to the player for the follow will look right
-      this.selectionIndicator.isoX = this.player.isoX;
-      this.selectionIndicator.isoY = this.player.isoY;
-      this.selectionIndicator._project();
-      this.cameras.main.setDeadzone(100, 100);
-      this.cameras.main.startFollow(this.selectionIndicator, false, 0.1, 0.1);
-    }
     this.selectionIndicator.visible = true;
     this.selectionIndicator.isoX = this.target.object.isoX;
     this.selectionIndicator.isoY = this.target.object.isoY;
     this.selectionIndicator._project();
-    console.log("ox", this.selectionIndicator.x, this.selectionIndicator.y);
   }
 
   generateObjectPositions(room) {
