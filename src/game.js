@@ -3,6 +3,7 @@ import settings from "./settings.js";
 import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
+import EnhancedIsoSprite from "./EnhancedIsoSprite.js";
 import { sortByDistance } from "./helpers.js";
 
 const TileSize = 38; // tile width and height
@@ -130,12 +131,24 @@ export class GameScene extends Phaser.Scene {
         let [ox, oy] = positions.pop();
         // console.log("o", o, ox, oy);
         // @ts-ignore
+        /*
         let isoObj = this.add.isoSprite(
           ox * TileSize,
           oy * TileSize,
           0, // heights[o] - TileSize,
           o
         );
+        */
+        let isoObj = new EnhancedIsoSprite({
+          scene: this,
+          x: ox * TileSize,
+          y: oy * TileSize,
+          z: 0,
+          texture: o,
+          frame: 0,
+          description: o,
+          reward: 1
+        });
         this.finder.setAdditionalPointCost(ox, oy, 20);
         room.isoObjects.push(isoObj);
         // eliminate this position and its neighbors
@@ -236,7 +249,7 @@ export class GameScene extends Phaser.Scene {
       .addEventListener("click", e => this.selectNext());
   }
 
-  moveTo(x, y) {
+  pathTo(x, y) {
     return new Promise((resolve, reject) => {
       var toX = Math.floor(x / TileSize);
       var toY = Math.floor(y / TileSize);
@@ -244,15 +257,9 @@ export class GameScene extends Phaser.Scene {
       var fromY = Math.floor(this.player.isoY / TileSize);
       // console.log(this.currentObject);
       this.finder.findPath(fromX, fromY, toX, toY, path => {
-        if (path === null) {
-          // console.log(fromX + " " + fromY + " " + toX + " " + toY);
-          console.warn("Path was not found.");
-          reject();
-        } else {
-          this.moveCharacter(path).then(resolve);
-        }
+        resolve(path || []);
       });
-      this.finder.calculate(); // don't fthis, otherwise nothing happens
+      this.finder.calculate();
     });
   }
 
@@ -355,21 +362,25 @@ export class GameScene extends Phaser.Scene {
         let x = xy[0] + step[0];
         let y = xy[1] + step[1];
         // console.log("gp", x, y);
-        this.moveTo(x * TileSize, y * TileSize).then(() => {
-          this.room = room;
-          resolve();
+        this.pathTo(x * TileSize, y * TileSize).then(path => {
+          this.moveCharacter(path).then(() => {
+            this.room = room;
+            resolve();
+          });
         });
       } else {
         // console.log("object selected", this.target.object);
-        let pos = [target.object.isoX, target.object.isoY];
-        pos = this.room.global_pos(pos);
-        this.moveTo(pos[0], pos[1]).then(() => {
-          target.object.visible = false;
-          this.room.isoObjects = this.room.isoObjects.filter(
-            o => o !== target.object
-          );
-          this.score++;
-          resolve();
+        let { x, y, z } = target.object.position();
+        this.pathTo(x, y).then(path => {
+          path = target.object.path(path);
+          this.moveCharacter(path).then(() => {
+            target.object.visible = false;
+            this.room.isoObjects = this.room.isoObjects.filter(
+              o => o !== target.object
+            );
+            this.score++;
+            resolve();
+          });
         });
       }
     });
