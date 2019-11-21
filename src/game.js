@@ -17,11 +17,11 @@ export class GameScene extends Phaser.Scene {
     this.score = 0;
     this.targetIndex = -1;
 
-    this.selectionIndicator = null;
-
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
+    // debugging hack
+    window.scene = this;
   }
 
   preload() {
@@ -128,7 +128,7 @@ export class GameScene extends Phaser.Scene {
         /// remove the position of the player
         let o = objects.pop();
         let [ox, oy] = positions.pop();
-        console.log("o", o, ox, oy);
+        // console.log("o", o, ox, oy);
         // @ts-ignore
         let isoObj = this.add.isoSprite(
           ox * TileSize,
@@ -189,6 +189,18 @@ export class GameScene extends Phaser.Scene {
     // this.player.scale = 0.4;
     this.lighting();
 
+    // @ts-ignore
+    this.selectionIndicator = this.add.isoSprite(
+      this.player.isoX,
+      this.player.isoY,
+      1,
+      "door",
+      this.isoGroup,
+      null
+    );
+    this.selectionIndicator.alpha = 0.8;
+    this.selectionIndicator.visible = false;
+
     this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
 
     // control sound
@@ -196,8 +208,18 @@ export class GameScene extends Phaser.Scene {
     }
 
     // configure the camera
+    // I'm making the camera follow the selection box and it follows the
+    // player when the player moves. I'm using this hack to keep the selection
+    // in view without too much motion. I still think it could be better.
     this.cameras.main.setSize(20 * TileSize, 20 * TileSize);
-    this.cameras.main.startFollow(this.player);
+    this.cameras.main.startFollow(this.selectionIndicator, false, 0.05, 0.05);
+    this.cameras.main.setDeadzone(300, 300);
+
+    // make the selection box follow the player
+    this.player.on("update", () => {
+      this.selectionIndicator.isoX = this.player.isoX;
+      this.selectionIndicator.isoY = this.player.isoY;
+    });
 
     // respond to switch input
     this.input.keyboard.on("keydown", e => {
@@ -225,7 +247,7 @@ export class GameScene extends Phaser.Scene {
     // console.log(this.currentObject);
     this.finder.findPath(fromX, fromY, toX, toY, path => {
       if (path === null) {
-        console.log(fromX + " " + fromY + " " + toX + " " + toY);
+        // console.log(fromX + " " + fromY + " " + toX + " " + toY);
         console.warn("Path was not found.");
       } else {
         this.moveCharacter(path, callback);
@@ -293,27 +315,34 @@ export class GameScene extends Phaser.Scene {
 
   makeChoice() {
     console.log("make choice");
-    if (this.selectionIndicator) {
-      this.selectionIndicator.destroy();
-    }
+    this.selectionIndicator.visible = false;
     if (this.target) {
+      this.targetIndex = -1;
       if ("exit" in this.target) {
-        console.log("door selected");
-        let [xy, rot, room] = this.target.exit;
+        // tween the camera back over to the player
+        this.tweens.add({
+          targets: this.selectionIndicator,
+          isoX: this.player.isoX,
+          isoY: this.player.isoY,
+          duration: 500,
+          onComplete: () => {
+            let [xy, rot, room] = this.target.exit;
 
-        console.log("door", xy[0], xy[1], rot);
-        xy = this.room.global_pos(xy);
-        let step = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
-        let x = xy[0] + step[0];
-        let y = xy[1] + step[1];
-        console.log("gp", x, y);
-        this.moveTo(x * TileSize, y * TileSize, () => {
-          this.room = room;
-          this.targetIndex = -1;
-          this.target = null;
+            // console.log("door", xy[0], xy[1], rot);
+            xy = this.room.global_pos(xy);
+            let step = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
+            let x = xy[0] + step[0];
+            let y = xy[1] + step[1];
+            // console.log("gp", x, y);
+            this.moveTo(x * TileSize, y * TileSize, () => {
+              this.room = room;
+              this.target = null;
+            });
+          }
         });
+        // console.log("door selected");
       } else {
-        console.log("object selected", this.target.object);
+        // console.log("object selected", this.target.object);
         let pos = [this.target.object.isoX, this.target.object.isoY];
         pos = this.room.global_pos(pos);
         this.moveTo(pos[0], pos[1], () => (this.target.object.visible = false));
@@ -336,7 +365,7 @@ export class GameScene extends Phaser.Scene {
     let exits = this.room.exits.map(exit => {
       let [xy, rot, room] = exit;
       const [x, y] = this.room.global_pos(xy);
-      console.log("exit", x, y);
+      // console.log("exit", x, y);
       const tiles = this.tiles.filter(
         t => t.isoX / TileSize == x && t.isoY / TileSize == y
       );
@@ -349,21 +378,23 @@ export class GameScene extends Phaser.Scene {
     });
     sortByDistance(exits, px, py);
     targets = [...targets, ...exits];
-    console.log("targets", targets);
+    // console.log("targets", targets);
     // choose one based on the index
     this.targetIndex += 1;
     this.target = targets[this.targetIndex % targets.length];
-    if (this.selectionIndicator) {
-      this.selectionIndicator.destroy();
+    if (false && !this.selectionIndicator.visible) {
+      // position first to the player for the follow will look right
+      this.selectionIndicator.isoX = this.player.isoX;
+      this.selectionIndicator.isoY = this.player.isoY;
+      this.selectionIndicator._project();
+      this.cameras.main.setDeadzone(100, 100);
+      this.cameras.main.startFollow(this.selectionIndicator, false, 0.1, 0.1);
     }
-    // @ts-ignore
-    this.selectionIndicator = this.add.isoSprite(
-      this.target.object.isoX,
-      this.target.object.isoY,
-      0,
-      "door"
-    );
-    this.selectionIndicator.alpha = 0.8;
+    this.selectionIndicator.visible = true;
+    this.selectionIndicator.isoX = this.target.object.isoX;
+    this.selectionIndicator.isoY = this.target.object.isoY;
+    this.selectionIndicator._project();
+    console.log("ox", this.selectionIndicator.x, this.selectionIndicator.y);
   }
 
   generateObjectPositions(room) {
