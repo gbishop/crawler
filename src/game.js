@@ -351,39 +351,31 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  visitChoice(target) {
-    return new Promise((resolve, reject) => {
-      if ("exit" in target) {
-        let [xy, rot, room] = target.exit;
+  async visitChoice(target) {
+    if ("exit" in target) {
+      let [xy, rot, room] = target.exit;
 
-        // console.log("door", xy[0], xy[1], rot);
-        xy = this.room.global_pos(xy);
-        let step = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
-        let x = xy[0] + step[0];
-        let y = xy[1] + step[1];
-        // console.log("gp", x, y);
-        this.pathTo(x * TileSize, y * TileSize).then(path => {
-          this.moveCharacter(path).then(() => {
-            this.room = room;
-            resolve();
-          });
-        });
-      } else {
-        // console.log("object selected", this.target.object);
-        let { x, y, z } = target.object.position();
-        this.pathTo(x, y).then(path => {
-          path = target.object.path(path);
-          this.moveCharacter(path).then(() => {
-            target.object.visible = false;
-            this.room.isoObjects = this.room.isoObjects.filter(
-              o => o !== target.object
-            );
-            this.score++;
-            resolve();
-          });
-        });
-      }
-    });
+      // console.log("door", xy[0], xy[1], rot);
+      xy = this.room.global_pos(xy);
+      let step = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
+      let x = xy[0] + step[0];
+      let y = xy[1] + step[1];
+      // console.log("gp", x, y);
+      let path = await this.pathTo(x * TileSize, y * TileSize);
+      await this.moveCharacter(path);
+      this.room = room;
+    } else {
+      // console.log("object selected", this.target.object);
+      let { x, y, z } = target.object.position();
+      let path = await this.pathTo(x, y);
+      path = target.object.path(path);
+      await this.moveCharacter(path);
+      target.object.visible = false;
+      this.room.isoObjects = this.room.isoObjects.filter(
+        o => o !== target.object
+      );
+      this.score++;
+    }
   }
 
   getTargets() {
