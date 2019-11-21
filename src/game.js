@@ -21,8 +21,6 @@ export class GameScene extends Phaser.Scene {
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
-    // debugging hack
-    window.scene = this;
   }
 
   preload() {
@@ -70,16 +68,16 @@ export class GameScene extends Phaser.Scene {
         any: {
           min_size: [3, 3],
           max_size: [7, 7],
-          max_exits: 4
+          max_exits: 3
         }
       },
-      max_corridor_length: 20,
-      min_corridor_length: 5,
+      max_corridor_length: 0,
+      min_corridor_length: 0,
       corridor_density: 0.0, //corridors per room
       symmetric_rooms: false, // exits must be in the center of a wall if true
-      interconnects: 5, //extra corridors to connect rooms and make circular paths. not 100% guaranteed
+      interconnects: 0, //extra corridors to connect rooms and make circular paths. not 100% guaranteed
       max_interconnect_length: 10,
-      room_count: 10
+      room_count: 40
     });
     this.dungeon.generate();
     let [ix, iy] = this.dungeon.start_pos;
@@ -104,6 +102,8 @@ export class GameScene extends Phaser.Scene {
 
     this.tiles = [];
     this.dungeon.children.forEach(room => {
+      // monkey patch the room to have our objects list
+      room.isoObjects = [];
       // console.log(room);
       // console.log(room.position);
       // console.log(room.size);
@@ -121,7 +121,6 @@ export class GameScene extends Phaser.Scene {
       positions = positions.filter(([px, py]) => px != ix || py != iy);
       positions = Phaser.Math.RND.shuffle(positions);
       const nobjects = Phaser.Math.RND.between(0, 3);
-      room.isoObjects = [];
       for (let i = 0; i < nobjects; i++) {
         if (!positions.length) {
           break;
@@ -147,10 +146,10 @@ export class GameScene extends Phaser.Scene {
           texture: o,
           frame: 0,
           description: o,
-          reward: 1
+          reward: 1,
+          room: room
         });
         this.finder.setAdditionalPointCost(ox, oy, 20);
-        room.isoObjects.push(isoObj);
         // eliminate this position and its neighbors
         positions = positions.filter(
           ([px, py]) => Math.hypot(px - ox, py - oy) > 1
@@ -355,22 +354,28 @@ export class GameScene extends Phaser.Scene {
     if ("exit" in target) {
       let [xy, rot, room] = target.exit;
 
-      // console.log("door", xy[0], xy[1], rot);
       xy = this.room.global_pos(xy);
-      let step = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
-      let x = xy[0] + step[0];
-      let y = xy[1] + step[1];
-      // console.log("gp", x, y);
+      let [sx, sy] = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
+      let x = xy[0] + sx;
+      let y = xy[1] + sy;
+      // get the path to the door
       let path = await this.pathTo(x * TileSize, y * TileSize);
+      // move there
       await this.moveCharacter(path);
+      // it is now the current room
       this.room = room;
     } else {
-      // console.log("object selected", this.target.object);
+      // allow the object to provide the destination
       let { x, y, z } = target.object.position();
+      // get the path there
       let path = await this.pathTo(x, y);
+      // allow the object to edit the path
       path = target.object.path(path);
+      // go there
       await this.moveCharacter(path);
-      target.object.visible = false;
+      // interact with the object
+      target.object.interact(this.player, this.room);
+      // this should be in interact because we might not want to remove it
       this.room.isoObjects = this.room.isoObjects.filter(
         o => o !== target.object
       );

@@ -10,15 +10,17 @@ export default class EnhancedIsoSprite extends IsoSprite {
       config.texture,
       config.frame
     );
+    this.room = config.room;
     this.config = config;
     config.scene.add.existing(this);
+    this.room.isoObjects.push(this);
   }
 
   /*
    * What is the likely reward for interacting with this?
    */
   reward(player) {
-    return this.config.reward;
+    return this.config.reward || 0;
   }
 
   /*
@@ -40,7 +42,8 @@ export default class EnhancedIsoSprite extends IsoSprite {
   /*
    * Interact with the object
    */
-  async interact(player) {
+  async interact(player, room) {
     this.visible = false;
+    this.room.isoObjects = this.room.isoObjects.filter(o => o !== this);
   }
 }
