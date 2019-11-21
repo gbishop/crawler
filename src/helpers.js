@@ -21,3 +21,9 @@ export function getInputAll(query) {
     ))
   ];
 }
+
+export function sortByDistance(array, x, y) {
+    return array.sort(
+      (a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)
+    );
+}
