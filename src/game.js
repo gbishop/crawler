@@ -6,7 +6,21 @@ import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 import EnhancedIsoSprite from "./EnhancedIsoSprite.js";
 import { sortByDistance } from "./helpers.js";
 
+/* +x is down to right, +y is down to left */
+
 const TileSize = 38; // tile width and height
+
+const directions = [
+  "x-1y-1",
+  "x+0y-1",
+  "x+1y-1",
+  "x-1y+0",
+  "x+0y+0",
+  "x+1y+0",
+  "x-1y+1",
+  "x+0y+1",
+  "x+1y+1"
+];
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -32,7 +46,7 @@ export class GameScene extends Phaser.Scene {
 
     this.load.image("ground", "assets/cube.png");
     this.load.image("door", "assets/door.png");
-    this.load.atlas("hero", "assets/Knight.png", "assets/Knight.json");
+    this.load.atlas("hero", "assets/spag.png", "assets/spag.json");
     this.load.image("Chest1_closed", "assets/Chest1_closed.png");
     this.load.image("Chest2_opened", "assets/Chest2_opened.png");
     this.load.image("fountain", "assets/fountain.png");
@@ -99,6 +113,7 @@ export class GameScene extends Phaser.Scene {
     this.finder = new EasyStar.js();
     this.finder.setGrid(grid);
     this.finder.setAcceptableTiles([28]);
+    this.finder.enableDiagonals();
 
     this.tiles = [];
     this.dungeon.children.forEach(room => {
@@ -110,12 +125,12 @@ export class GameScene extends Phaser.Scene {
       let objects = [...Phaser.Math.RND.shuffle(this.RandomlyPlacedObjects)];
       // console.log(room.objects);
       let heights = {
-        Chest1_closed: 50,
-        Chest2_opened: 50,
-        fountain: 55,
-        over_grass_flower1: 40,
-        Rock_1: 40,
-        Rock_2: 40
+        Chest1_closed: 0,
+        Chest2_opened: 0,
+        fountain: 0,
+        over_grass_flower1: -TileSize / 2,
+        Rock_1: -TileSize / 2,
+        Rock_2: -TileSize / 2
       };
       let positions = this.generateObjectPositions(room);
       positions = positions.filter(([px, py]) => px != ix || py != iy);
@@ -142,7 +157,7 @@ export class GameScene extends Phaser.Scene {
           scene: this,
           x: ox * TileSize,
           y: oy * TileSize,
-          z: 0,
+          z: heights[o],
           texture: o,
           frame: 0,
           description: o,
@@ -186,20 +201,20 @@ export class GameScene extends Phaser.Scene {
       null
     );
 
-    for (var direction of ["x+1", "x-1", "y+1", "y-1"]) {
+    for (var direction of directions) {
       this.anims.create({
         key: direction,
         frames: this.anims.generateFrameNames("hero", {
           prefix: direction + "_",
-          end: 29,
-          zeroPad: 2
+          end: 5,
+          zeroPad: 1
         }),
-        frameRate: 60,
+        frameRate: 10,
         repeat: -1
       });
     }
     this.player = hero;
-    // this.player.scale = 0.4;
+    this.player.scale = 0.4;
     this.lighting();
 
     // @ts-ignore
@@ -291,16 +306,7 @@ export class GameScene extends Phaser.Scene {
         const ey = path[i].y;
         const dx = ex - path[i - 1].x;
         const dy = ey - path[i - 1].y;
-        var dir = "";
-        if (dx < 0) {
-          dir = "x-1";
-        } else if (dx > 0) {
-          dir = "x+1";
-        } else if (dy > 0) {
-          dir = "y+1";
-        } else if (dy < 0) {
-          dir = "y-1";
-        }
+        const dir = directions[Math.sign(dx) + 1 + 3 * (Math.sign(dy) + 1)];
         tweens.push({
           targets: [this.player, this.selectionIndicator],
           isoX: { value: ex * TileSize, duration: 200 },
