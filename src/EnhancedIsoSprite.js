@@ -1,5 +1,5 @@
 import IsoSprite from "./phaser3-plugin-isometric/IsoSprite.js";
-
+let vowels = ['a', 'e', 'i', 'o', 'u'];
 export default class EnhancedIsoSprite extends IsoSprite {
   constructor(config) {
     super(
@@ -14,6 +14,7 @@ export default class EnhancedIsoSprite extends IsoSprite {
     this.config = config;
     config.scene.add.existing(this);
     this.room.isoObjects.push(this);
+    this.description = config.description;
   }
 
   /*
@@ -37,6 +38,12 @@ export default class EnhancedIsoSprite extends IsoSprite {
    */
   path(path) {
     return path;
+  }
+
+  // when we have the objects we know we want in the game, we should give them a property "pretty name"
+  // vs doing all of this manipulation. 
+  getDescription(){
+   return vowels.indexOf(this.description.charAt(0)) > -1 ? "an "+this.description.toLowerCase() : "a "+this.description.toLowerCase();
   }
 
   /*

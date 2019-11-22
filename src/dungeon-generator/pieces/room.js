@@ -60,4 +60,21 @@ export default class Room extends Piece {
     }
     return l;
   }
+
+  getDescription(){
+    if(this.isoObjects.length == 0){
+      return "This room is empty! Go explore others."
+    }
+    let description = "You've found ";
+    let index = 0;
+    this.isoObjects.forEach(o => {
+      if(index == this.isoObjects.length-1 && this.isoObjects.length > 1){
+        description += " and ";
+      }
+      description += o.getDescription();
+      index++;
+    });
+    console.log(description);
+    return description;
+  }
 }

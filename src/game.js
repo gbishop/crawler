@@ -82,6 +82,7 @@ export class GameScene extends Phaser.Scene {
     this.dungeon.generate();
     let [ix, iy] = this.dungeon.start_pos;
     this.room = this.dungeon.initial_room;
+    
     // translate into a tilemap
     let [width, height] = this.dungeon.size;
     let grid = [];
@@ -244,6 +245,8 @@ export class GameScene extends Phaser.Scene {
     document
       .getElementById("right")
       .addEventListener("click", e => this.selectNext());
+
+      document.getElementById("information_box").innerHTML = this.room.getDescription();
   }
 
   pathTo(x, y) {
@@ -312,6 +315,7 @@ export class GameScene extends Phaser.Scene {
         onComplete: () => {
           this.player.anims.stop();
           resolve();
+          document.getElementById("information_box").innerHTML = this.room.getDescription();
         }
       });
     });
@@ -345,6 +349,7 @@ export class GameScene extends Phaser.Scene {
       this.selectionIndicator.visible = false;
       await this.visitChoice(this.target);
       this.target = null;
+      document.getElementById("information_box").innerHTML = this.room.getDescription();
     }
   }
 
