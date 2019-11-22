@@ -37,7 +37,7 @@ for direction in directions:
         }
         frames.append(frame)
         xo += width
-        if xo > 2048:
+        if xo >= 2040:
             xo = 0
             yo += height
 
