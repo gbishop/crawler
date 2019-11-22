@@ -137,6 +137,7 @@ export class GameScene extends Phaser.Scene {
           o
         );
         */
+
         let isoObj = new EnhancedIsoSprite({
           scene: this,
           x: ox * TileSize,
@@ -230,8 +231,8 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on("keydown", e => {
       if (e.key == "Enter" || e.key == "ArrowLeft") {
         this.makeChoice();
-      } else if (e.key == "Space" || e.key == "ArrowRight") {
-        this.selectNext();
+      } else if (e.key == " " || e.key == "ArrowRight") {
+        this.selectNext();     
       } else if (e.key == "A") {
         console.log("autoplay");
         this.autoPlay();
@@ -313,6 +314,10 @@ export class GameScene extends Phaser.Scene {
       this.tweens.timeline({
         tweens: tweens,
         onComplete: () => {
+          if(this.selectionIndicator.audio != null){
+            let music = this.sound.add(this.selectionIndicator.audio);
+            music.play();
+          }
           this.player.anims.stop();
           resolve();
           document.getElementById("information_box").innerHTML = this.room.getDescription();

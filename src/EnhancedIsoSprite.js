@@ -1,7 +1,7 @@
 import IsoSprite from "./phaser3-plugin-isometric/IsoSprite.js";
 let vowels = ['a', 'e', 'i', 'o', 'u'];
 export default class EnhancedIsoSprite extends IsoSprite {
-  constructor(config) {
+  constructor(config, audio) {
     super(
       config.scene,
       config.x,
@@ -10,6 +10,7 @@ export default class EnhancedIsoSprite extends IsoSprite {
       config.texture,
       config.frame
     );
+    this.audio = audio;
     this.room = config.room;
     this.config = config;
     config.scene.add.existing(this);

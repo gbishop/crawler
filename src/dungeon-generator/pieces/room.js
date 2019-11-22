@@ -74,7 +74,6 @@ export default class Room extends Piece {
       description += o.getDescription();
       index++;
     });
-    console.log(description);
     return description;
   }
 }
