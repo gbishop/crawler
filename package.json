@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Dungeon crawler game (Phaser 3 + Javascript)",
   "scripts": {
-    "start": "live-server"
+    "start": "live-server --no-browser"
   },
   "author": "Gary Bishop",
   "license": "MIT",
