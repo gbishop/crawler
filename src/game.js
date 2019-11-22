@@ -149,6 +149,7 @@ export class GameScene extends Phaser.Scene {
           reward: 1,
           room: room
         });
+        room.isoObjects.push(isoObj);
         this.finder.setAdditionalPointCost(ox, oy, 20);
         // eliminate this position and its neighbors
         positions = positions.filter(
@@ -224,14 +225,15 @@ export class GameScene extends Phaser.Scene {
     // player when the player moves. I'm using this hack to keep the selection
     // in view without too much motion. I still think it could be better.
     this.cameras.main.setSize(20 * TileSize, 20 * TileSize);
-    this.cameras.main.startFollow(this.selectionIndicator, false, 0.05, 0.05);
+    this.cameras.main.startFollow(this.selectionIndicator, true, 1, 1);
     this.cameras.main.setDeadzone(300, 300);
 
     // respond to switch input
     this.input.keyboard.on("keydown", e => {
+      console.log("key", e.key);
       if (e.key == "Enter" || e.key == "ArrowLeft") {
         this.makeChoice();
-      } else if (e.key == "Space" || e.key == "ArrowRight") {
+      } else if (e.key == " " || e.key == "ArrowRight") {
         this.selectNext();
       } else if (e.key == "A") {
         console.log("autoplay");
@@ -374,11 +376,12 @@ export class GameScene extends Phaser.Scene {
       // go there
       await this.moveCharacter(path);
       // interact with the object
-      target.object.interact(this.player, this.room);
-      // this should be in interact because we might not want to remove it
-      this.room.isoObjects = this.room.isoObjects.filter(
-        o => o !== target.object
-      );
+      let keep = await target.object.interact(this.player, this.room);
+      if (!keep) {
+        this.room.isoObjects = this.room.isoObjects.filter(
+          o => o !== target.object
+        );
+      }
       this.score++;
     }
   }

@@ -13,7 +13,6 @@ export default class EnhancedIsoSprite extends IsoSprite {
     this.room = config.room;
     this.config = config;
     config.scene.add.existing(this);
-    this.room.isoObjects.push(this);
   }
 
   /*
@@ -44,6 +43,6 @@ export default class EnhancedIsoSprite extends IsoSprite {
    */
   async interact(player, room) {
     this.visible = false;
-    this.room.isoObjects = this.room.isoObjects.filter(o => o !== this);
+    return false; // false to remove, true to keep
   }
 }
