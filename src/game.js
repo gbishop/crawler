@@ -3,12 +3,11 @@ import settings from "./settings.js";
 import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
+import IsoSprite from "./phaser3-plugin-isometric/IsoSprite.js";
 import EnhancedIsoSprite from "./EnhancedIsoSprite.js";
 import { sortByDistance } from "./helpers.js";
 
 /* +x is down to right, +y is down to left */
-
-const TileSize = 38; // tile width and height
 
 const directions = [
   "x-1y-1",
@@ -46,7 +45,7 @@ export class GameScene extends Phaser.Scene {
 
     this.load.image("ground", "assets/cube.png");
     this.load.image("door", "assets/door.png");
-    this.load.atlas("hero", "assets/spag.png", "assets/spag.json");
+    this.load.atlas("hero", "assets/Knight.png", "assets/Knight.json");
     this.load.image("Chest1_closed", "assets/Chest1_closed.png");
     this.load.image("Chest2_opened", "assets/Chest2_opened.png");
     this.load.image("fountain", "assets/fountain.png");
@@ -113,7 +112,6 @@ export class GameScene extends Phaser.Scene {
     this.finder = new EasyStar.js();
     this.finder.setGrid(grid);
     this.finder.setAcceptableTiles([28]);
-    this.finder.enableDiagonals();
 
     this.tiles = [];
     this.dungeon.children.forEach(room => {
@@ -124,13 +122,14 @@ export class GameScene extends Phaser.Scene {
       // console.log(room.size);
       let objects = [...Phaser.Math.RND.shuffle(this.RandomlyPlacedObjects)];
       // console.log(room.objects);
+      /* I bet this can be done by looking at the height of the images */
       let heights = {
         Chest1_closed: 0,
         Chest2_opened: 0,
         fountain: 0,
-        over_grass_flower1: -TileSize / 2,
-        Rock_1: -TileSize / 2,
-        Rock_2: -TileSize / 2
+        over_grass_flower1: -1 / 2,
+        Rock_1: -1 / 2,
+        Rock_2: -1 / 2
       };
       let positions = this.generateObjectPositions(room);
       positions = positions.filter(([px, py]) => px != ix || py != iy);
@@ -143,27 +142,18 @@ export class GameScene extends Phaser.Scene {
         /// remove the position of the player
         let o = objects.pop();
         let [ox, oy] = positions.pop();
-        // console.log("o", o, ox, oy);
-        // @ts-ignore
-        /*
-        let isoObj = this.add.isoSprite(
-          ox * TileSize,
-          oy * TileSize,
-          0, // heights[o] - TileSize,
-          o
-        );
-        */
         let isoObj = new EnhancedIsoSprite({
           scene: this,
-          x: ox * TileSize,
-          y: oy * TileSize,
+          x: ox,
+          y: oy,
           z: heights[o],
           texture: o,
-          frame: 0,
+          group: this.isoGroup,
           description: o,
           reward: 1,
           room: room
         });
+        isoObj.scale = Math.sqrt(3) / isoObj.width;
         room.isoObjects.push(isoObj);
         this.finder.setAdditionalPointCost(ox, oy, 20);
         // eliminate this position and its neighbors
@@ -177,57 +167,44 @@ export class GameScene extends Phaser.Scene {
       for (let x = 0; x < width; x++) {
         if (grid[y][x] === 0) continue;
         // @ts-ignore
-        let tile = this.add.isoSprite(
-          x * TileSize,
-          y * TileSize,
-          -TileSize,
-          "ground",
-          this.isoGroup
-        );
-        // 493 is width of the image
-        // There are 12 empty pixels on either side (2*12 = 24)
-        // The isometric projection is sqrt(3) tiles the edge width
+        let tile = this.add.isoSprite(x, y, -1, "ground", this.isoGroup);
+        tile.scale = Math.sqrt(3) / tile.width;
         this.tiles.push(tile);
       }
     }
 
     // @ts-ignore
-    var hero = this.add.isoSprite(
-      ix * TileSize,
-      iy * TileSize,
-      0,
-      "hero",
-      this.isoGroup,
-      null
-    );
+    var hero = this.add.isoSprite(ix, iy, 0, "hero", this.isoGroup, null);
 
     for (var direction of directions) {
       this.anims.create({
         key: direction,
         frames: this.anims.generateFrameNames("hero", {
           prefix: direction + "_",
-          end: 5,
-          zeroPad: 1
+          end: 9,
+          zeroPad: 2
         }),
-        frameRate: 10,
+        frameRate: 20,
         repeat: -1
       });
     }
     this.player = hero;
-    this.player.scale = 0.4;
+    this.player.scale = (0.6 * Math.sqrt(3)) / this.player.width;
     this.lighting();
 
     // @ts-ignore
     this.selectionIndicator = this.add.isoSprite(
       this.player.isoX,
       this.player.isoY,
-      1,
+      0.01,
       "door",
       this.isoGroup,
       null
     );
     this.selectionIndicator.alpha = 0.8;
     this.selectionIndicator.visible = false;
+    this.selectionIndicator.scale =
+      Math.sqrt(3) / this.selectionIndicator.width;
 
     this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
 
@@ -239,9 +216,9 @@ export class GameScene extends Phaser.Scene {
     // I'm making the camera follow the selection box and it follows the
     // player when the player moves. I'm using this hack to keep the selection
     // in view without too much motion. I still think it could be better.
-    this.cameras.main.setSize(20 * TileSize, 20 * TileSize);
+    this.cameras.main.setZoom(38);
     this.cameras.main.startFollow(this.selectionIndicator, true, 1, 1);
-    this.cameras.main.setDeadzone(300, 300);
+    this.cameras.main.setDeadzone(10, 10);
 
     // respond to switch input
     this.input.keyboard.on("keydown", e => {
@@ -267,10 +244,10 @@ export class GameScene extends Phaser.Scene {
 
   pathTo(x, y) {
     return new Promise((resolve, reject) => {
-      var toX = Math.floor(x / TileSize);
-      var toY = Math.floor(y / TileSize);
-      var fromX = Math.floor(this.player.isoX / TileSize);
-      var fromY = Math.floor(this.player.isoY / TileSize);
+      var toX = Math.floor(x);
+      var toY = Math.floor(y);
+      var fromX = Math.floor(this.player.isoX);
+      var fromY = Math.floor(this.player.isoY);
       // console.log(this.currentObject);
       this.finder.findPath(fromX, fromY, toX, toY, path => {
         resolve(path || []);
@@ -280,18 +257,24 @@ export class GameScene extends Phaser.Scene {
   }
 
   lighting() {
-    return;
-    this.tiles.map(tile => {
+    this.isoGroup.getChildren().forEach(go => {
+      const tile = /** @type{IsoSprite} */ (go);
+      if (tile === this.selectionIndicator) return;
       const px = this.player.isoX;
       const py = this.player.isoY;
       const tx = tile.isoX;
       const ty = tile.isoY;
       const d = Math.hypot(tx - px, ty - py);
-      const dmin = 30;
-      const dmax = 400;
+      const dmin = 2;
+      const dmax = 6;
       const u = Math.max(0, Math.min(1, (d - dmin) / (dmax - dmin)));
       const b = (255 * (1 - u)) & 0xff;
-      tile.tint = (b << 16) | (b << 8) | b;
+      if (b == 0) {
+        tile.visible = false;
+      } else {
+        tile.visible = true;
+        tile.tint = (b << 16) | (b << 8) | b;
+      }
     });
   }
 
@@ -306,11 +289,13 @@ export class GameScene extends Phaser.Scene {
         const ey = path[i].y;
         const dx = ex - path[i - 1].x;
         const dy = ey - path[i - 1].y;
+        const duration = 200 * Math.hypot(dx, dy);
         const dir = directions[Math.sign(dx) + 1 + 3 * (Math.sign(dy) + 1)];
         tweens.push({
           targets: [this.player, this.selectionIndicator],
-          isoX: { value: ex * TileSize, duration: 200 },
-          isoY: { value: ey * TileSize, duration: 200 },
+          isoX: ex,
+          isoY: ey,
+          duration: duration,
           onStart: start(dir),
           onUpdate: () => this.lighting()
         });
@@ -367,7 +352,7 @@ export class GameScene extends Phaser.Scene {
       let x = xy[0] + sx;
       let y = xy[1] + sy;
       // get the path to the door
-      let path = await this.pathTo(x * TileSize, y * TileSize);
+      let path = await this.pathTo(x, y);
       // move there
       await this.moveCharacter(path);
       // it is now the current room
@@ -387,6 +372,12 @@ export class GameScene extends Phaser.Scene {
         this.room.isoObjects = this.room.isoObjects.filter(
           o => o !== target.object
         );
+        target.object.destroy();
+        this.finder.setAdditionalPointCost(
+          target.object.isoX,
+          target.object.isoY,
+          0
+        );
       }
       this.score++;
     }
@@ -404,9 +395,7 @@ export class GameScene extends Phaser.Scene {
       let [xy, rot, room] = exit;
       const [x, y] = this.room.global_pos(xy);
       // console.log("exit", x, y);
-      const tiles = this.tiles.filter(
-        t => t.isoX / TileSize == x && t.isoY / TileSize == y
-      );
+      const tiles = this.tiles.filter(t => t.isoX == x && t.isoY == y);
       return {
         object: tiles[0],
         exit,

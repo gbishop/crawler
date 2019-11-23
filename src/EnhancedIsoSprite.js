@@ -8,11 +8,12 @@ export default class EnhancedIsoSprite extends IsoSprite {
       config.y,
       config.z,
       config.texture,
-      config.frame
+      config.frame || 0
     );
     this.room = config.room;
     this.config = config;
     config.scene.add.existing(this);
+    if (config.group) config.group.add(this);
   }
 
   /*
