@@ -351,12 +351,8 @@ export class GameScene extends Phaser.Scene {
 
   clickButton(button) {
     console.log("here");
-    button.style.color = "#4B9CD3";
-    this.tweens.add({
-      targets: button,
-      duration: 3000,
-      onComplete: () => button.style.color = "#000000"
-    });
+    button.style.backgroundColor = "#99badd";
+    this.time.delayedCall(300, () => button.style.backgroundColor = "#FFFFFF");
   }
 
 
