@@ -12,12 +12,12 @@ framestep = 3
 
 folder = osp.join(root, character)
 
-directions = [f"{axis}{step}" for axis in ["x", "y"] for step in ["+1", "-1"]]
+directions = ["x+1y+0", "x-1y+0", "x+0y+1", "x+0y-1"]
 patterns = {
-    "x+1": "PNG/%s_Front-Walking-Front-Left_%d.png",
-    "y+1": "PNG/%s_Front-Walking-Front_%d.png",
-    "y-1": "PNG/%s_Back-Walking-Back_%d.png",
-    "x-1": "PNG/%s_Back-Walking-Back-Right_%d.png",
+    "x+1y+0": "PNG/%s_Front-Walking-Front-Left_%d.png",
+    "x+0y+1": "PNG/%s_Front-Walking-Front_%d.png",
+    "x+0y-1": "PNG/%s_Back-Walking-Back_%d.png",
+    "x-1y+0": "PNG/%s_Back-Walking-Back-Right_%d.png",
 }
 
 
