@@ -350,6 +350,12 @@ export class GameScene extends Phaser.Scene {
       document.getElementById('right').click();
       this.time.delayedCall(300, () => document.getElementById('left').click());
     }
+    this.room = this.room.children.sort((a,b) => a.isoObjects > b.isoObjects)[0];
+    if(this.room.isoObjects.length == 0){
+      return;
+    } else {
+      this.autoPlay();
+    }
   }
 
   clickButton(button) {
@@ -363,7 +369,7 @@ export class GameScene extends Phaser.Scene {
     if (this.target) {
       this.targetIndex = -1;
       this.selectionIndicator.visible = false;
-      this.room.isoObjects = this.room.isoObjects.filter(room => this.selectionIndicator != room);
+      this.room.isoObjects = this.room.isoObjects.filter(room => this.selectionIndicator !== room);
       await this.visitChoice(this.target);
       this.target = null;
       document.getElementById("information_box").innerHTML = this.room.getDescription();
