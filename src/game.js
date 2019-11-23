@@ -326,14 +326,37 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  // async autoPlay() {
+  //   let adjacentRooms = this.room.exits.map(e => e[2]);
+  //   adjacentRooms.sort((a,b) => a.isoObjects.length-b.isoObjects.length);
+  //   while(adjacentRooms.filter(room => room.isoObjects.length > 0).length > 0){
+  //     this.time.delayedCall(20000, this.selectNext());
+  //     this.time.delayedCall(50000, await this.makeChoice());
+  //   }
+  //   return;
+  // }
+
   async autoPlay() {
-    let adjacentRooms = this.room.exits.map(e => e[2]);
-    adjacentRooms.sort((a,b) => a.isoObjects.length-b.isoObjects.length);
-    while(adjacentRooms.filter(room => room.isoObjects.length > 0).length > 0){
-      this.time.delayedCall(20000, this.selectNext());
-      this.time.delayedCall(50000, await this.makeChoice());
+    const roomsToVisit = [this.room];
+    const roomsVisited = [];
+    while (roomsToVisit.length) {
+      this.room = roomsToVisit.pop();
+      roomsVisited.push(this.room);
+      const targets = this.getTargets();
+      for (const target of targets) {
+        if ("exit" in target) {
+          const [xy, rot, room] = target.exit;
+          if (roomsVisited.indexOf(room) >= 0) {
+            continue;
+          } else {
+            roomsToVisit.push(room);
+            continue;
+          }
+        }
+        this.selectNext();
+        await this.makeChoice();
+      }
     }
-    return;
   }
 
   clickButton(button) {
@@ -365,7 +388,7 @@ export class GameScene extends Phaser.Scene {
       // get the path to the door
       let path = await this.pathTo(x * TileSize, y * TileSize);
       // move there
-      await this.moveCharacter(path);
+      this.time.delayedCall(300, await this.moveCharacter(path));
       // it is now the current room
       this.room = room;
     } else {
@@ -376,7 +399,7 @@ export class GameScene extends Phaser.Scene {
       // allow the object to edit the path
       path = target.object.path(path);
       // go there
-      await this.moveCharacter(path);
+      this.time.delayedCall(300, await this.moveCharacter(path));
       // interact with the object
       target.object.interact(this.player, this.room);
       // this should be in interact because we might not want to remove it
@@ -410,6 +433,7 @@ export class GameScene extends Phaser.Scene {
       };
     });
     sortByNumberOfObjects(exits);
+    console.log(exits);
     targets = [...targets, ...exits];
     return targets;
   }
