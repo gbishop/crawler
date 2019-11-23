@@ -233,8 +233,7 @@ export class GameScene extends Phaser.Scene {
         this.makeChoice();
       } else if (e.key == " " || e.key == "ArrowRight") {
         this.selectNext();     
-      } else if (e.key == "A") {
-        console.log("autoplay");
+      } else if (e.key == "a") {
         this.autoPlay();
       }
     });
@@ -327,6 +326,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   async autoPlay() {
+    console.log("here");
     const roomsToVisit = [this.room];
     const roomsVisited = [];
     while (roomsToVisit.length) {
@@ -343,12 +343,21 @@ export class GameScene extends Phaser.Scene {
             continue;
           }
         }
+        this.clickButton(document.getElementById('left'));
         await this.visitChoice(target);
       }
     }
   }
 
+  clickButton(button) {
+    console.log("here");
+    button.style.backgroundColor = "#99badd";
+    this.time.delayedCall(300, () => button.style.backgroundColor = "#FFFFFF");
+  }
+
+
   async makeChoice() {
+    this.clickButton(document.getElementById('left'));
     if (this.target) {
       this.targetIndex = -1;
       this.selectionIndicator.visible = false;
@@ -358,6 +367,8 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // the player needs to see how the game gets played
+  // so we need to visually show the buttons getting clicked somehow
   async visitChoice(target) {
     if ("exit" in target) {
       let [xy, rot, room] = target.exit;
@@ -419,6 +430,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   selectNext() {
+    this.clickButton(document.getElementById('right'));
     const targets = this.getTargets();
     // console.log("targets", targets);
     // choose one based on the index
