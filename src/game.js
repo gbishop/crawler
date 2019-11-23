@@ -5,6 +5,7 @@ import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 import EnhancedIsoSprite from "./EnhancedIsoSprite.js";
 import { sortByDistance } from "./helpers.js";
+import {sortByNumberOfObjects } from "./helpers.js";
 
 const TileSize = 38; // tile width and height
 
@@ -326,36 +327,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   async autoPlay() {
-    // const roomsToVisit = [this.room];
-    // const roomsVisited = [];
-    // while (roomsToVisit.length) {
-    //   this.room = roomsToVisit.pop();
-    //   roomsVisited.push(this.room);
-    //   const targets = this.getTargets();
-    //   for (const target of targets) {
-    //     if ("exit" in target) {
-    //       const [xy, rot, room] = target.exit;
-    //       if (roomsVisited.indexOf(room) >= 0) {
-    //         continue;
-    //       } else {
-    //         roomsToVisit.push(room);
-    //         continue;
-    //       }
-    //     }
-    //     this.clickButton(document.getElementById('left'));
-    //     await this.visitChoice(target);
-    //   }
-    // }
-    while (this.room.isoObjects.length > 0) {
-      document.getElementById('right').click();
-      this.time.delayedCall(300, () => document.getElementById('left').click());
+    let adjacentRooms = this.room.exits.map(e => e[2]);
+    adjacentRooms.sort((a,b) => a.isoObjects.length-b.isoObjects.length);
+    while(adjacentRooms.filter(room => room.isoObjects.length > 0).length > 0){
+      this.time.delayedCall(20000, this.selectNext());
+      this.time.delayedCall(50000, await this.makeChoice());
     }
-    this.room = this.room.children.sort((a,b) => a.isoObjects > b.isoObjects)[0];
-    if(this.room.isoObjects.length == 0){
-      return;
-    } else {
-      this.autoPlay();
-    }
+    return;
   }
 
   clickButton(button) {
@@ -431,7 +409,7 @@ export class GameScene extends Phaser.Scene {
         y: tiles[0].isoY
       };
     });
-    sortByDistance(exits, px, py);
+    sortByNumberOfObjects(exits);
     targets = [...targets, ...exits];
     return targets;
   }
