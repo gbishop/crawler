@@ -5,7 +5,7 @@ import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 import EnhancedIsoSprite from "./EnhancedIsoSprite.js";
 import { sortByDistance } from "./helpers.js";
-import {sortByNumberOfObjects } from "./helpers.js";
+import { sortByNumberOfObjects } from "./helpers.js";
 
 const TileSize = 38; // tile width and height
 
@@ -236,6 +236,8 @@ export class GameScene extends Phaser.Scene {
         this.selectNext();
       } else if (e.key == "a") {
         this.autoPlay();
+      } else if (e.key == 'o') {
+        this.oneSwitch();
       }
     });
 
@@ -326,16 +328,6 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // async autoPlay() {
-  //   let adjacentRooms = this.room.exits.map(e => e[2]);
-  //   adjacentRooms.sort((a,b) => a.isoObjects.length-b.isoObjects.length);
-  //   while(adjacentRooms.filter(room => room.isoObjects.length > 0).length > 0){
-  //     this.time.delayedCall(20000, this.selectNext());
-  //     this.time.delayedCall(50000, await this.makeChoice());
-  //   }
-  //   return;
-  // }
-
   async autoPlay() {
     const roomsToVisit = [this.room];
     const roomsVisited = [];
@@ -353,14 +345,16 @@ export class GameScene extends Phaser.Scene {
             continue;
           }
         }
-        this.selectNext();
-        await this.makeChoice();
       }
     }
   }
 
+  async oneSwitch() {
+    this.selectNext();
+    this.time.delayedCall(600, async () => await this.makeChoice());
+  }
+
   clickButton(button) {
-    console.log("here");
     button.style.backgroundColor = "#99badd";
     this.time.delayedCall(300, () => button.style.backgroundColor = "#FFFFFF");
   }
@@ -371,6 +365,7 @@ export class GameScene extends Phaser.Scene {
       this.targetIndex = -1;
       this.selectionIndicator.visible = false;
       this.room.isoObjects = this.room.isoObjects.filter(room => this.selectionIndicator !== room);
+      console.log(this.room.isoObjects);
       await this.visitChoice(this.target);
       this.target = null;
       document.getElementById("information_box").innerHTML = this.room.getDescription();
@@ -433,7 +428,6 @@ export class GameScene extends Phaser.Scene {
       };
     });
     sortByNumberOfObjects(exits);
-    console.log(exits);
     targets = [...targets, ...exits];
     return targets;
   }
