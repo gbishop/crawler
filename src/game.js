@@ -5,9 +5,10 @@ import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 import EnhancedIsoSprite from "./EnhancedIsoSprite.js";
 import { sortByDistance } from "./helpers.js";
+import { sortByNumberOfObjects } from "./helpers.js";
 
 const TileSize = 38; // tile width and height
-
+let i = 5;
 export class GameScene extends Phaser.Scene {
   constructor() {
     super({
@@ -82,7 +83,7 @@ export class GameScene extends Phaser.Scene {
     this.dungeon.generate();
     let [ix, iy] = this.dungeon.start_pos;
     this.room = this.dungeon.initial_room;
-    
+
     // translate into a tilemap
     let [width, height] = this.dungeon.size;
     let grid = [];
@@ -232,21 +233,23 @@ export class GameScene extends Phaser.Scene {
       if (e.key == "Enter" || e.key == "ArrowLeft") {
         this.makeChoice();
       } else if (e.key == " " || e.key == "ArrowRight") {
-        this.selectNext();     
+        this.selectNext();
       } else if (e.key == "a") {
         this.autoPlay();
+      } else if (e.key == 'o') {
+        this.makeNextChoice();
       }
     });
 
     // respond to eye gaze user button click
     document
       .getElementById("left")
-      .addEventListener("click", e => this.makeChoice());
+      .addEventListener("click", async (e) => await this.makeChoice());
     document
       .getElementById("right")
       .addEventListener("click", e => this.selectNext());
 
-      document.getElementById("information_box").innerHTML = this.room.getDescription();
+    document.getElementById("information_box").innerHTML = this.room.getDescription();
   }
 
   pathTo(x, y) {
@@ -313,7 +316,7 @@ export class GameScene extends Phaser.Scene {
       this.tweens.timeline({
         tweens: tweens,
         onComplete: () => {
-          if(this.selectionIndicator.audio != null){
+          if (this.selectionIndicator.audio != null) {
             let music = this.sound.add(this.selectionIndicator.audio);
             music.play();
           }
@@ -325,50 +328,36 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  async autoPlay() {
-    console.log("here");
-    const roomsToVisit = [this.room];
-    const roomsVisited = [];
-    while (roomsToVisit.length) {
-      this.room = roomsToVisit.pop();
-      roomsVisited.push(this.room);
-      const targets = this.getTargets();
-      for (const target of targets) {
-        if ("exit" in target) {
-          const [xy, rot, room] = target.exit;
-          if (roomsVisited.indexOf(room) >= 0) {
-            continue;
-          } else {
-            roomsToVisit.push(room);
-            continue;
-          }
-        }
-        this.clickButton(document.getElementById('left'));
-        await this.visitChoice(target);
-      }
+  async autoPlay(){
+    await this.makeNextChoice();  
+    if(this.dungeon.children.filter(room => room.isoObjects.length > 0).length > 0){
+      this.time.delayedCall(2000, async () => await this.autoPlay());
     }
   }
 
+  async makeNextChoice() {
+    this.selectNext();
+    this.time.delayedCall(600, async () => await this.makeChoice());
+  }
+
   clickButton(button) {
-    console.log("here");
     button.style.backgroundColor = "#99badd";
     this.time.delayedCall(300, () => button.style.backgroundColor = "#FFFFFF");
   }
-
 
   async makeChoice() {
     this.clickButton(document.getElementById('left'));
     if (this.target) {
       this.targetIndex = -1;
       this.selectionIndicator.visible = false;
+      this.room.isoObjects = this.room.isoObjects.filter(room => this.selectionIndicator !== room);
+      console.log(this.room.isoObjects);
       await this.visitChoice(this.target);
       this.target = null;
       document.getElementById("information_box").innerHTML = this.room.getDescription();
     }
   }
 
-  // the player needs to see how the game gets played
-  // so we need to visually show the buttons getting clicked somehow
   async visitChoice(target) {
     if ("exit" in target) {
       let [xy, rot, room] = target.exit;
@@ -380,7 +369,7 @@ export class GameScene extends Phaser.Scene {
       // get the path to the door
       let path = await this.pathTo(x * TileSize, y * TileSize);
       // move there
-      await this.moveCharacter(path);
+      this.time.delayedCall(300, await this.moveCharacter(path));
       // it is now the current room
       this.room = room;
     } else {
@@ -391,7 +380,7 @@ export class GameScene extends Phaser.Scene {
       // allow the object to edit the path
       path = target.object.path(path);
       // go there
-      await this.moveCharacter(path);
+      this.time.delayedCall(300, await this.moveCharacter(path));
       // interact with the object
       target.object.interact(this.player, this.room);
       // this should be in interact because we might not want to remove it
@@ -424,7 +413,7 @@ export class GameScene extends Phaser.Scene {
         y: tiles[0].isoY
       };
     });
-    sortByDistance(exits, px, py);
+    sortByNumberOfObjects(exits);
     targets = [...targets, ...exits];
     return targets;
   }

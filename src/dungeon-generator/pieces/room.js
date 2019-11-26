@@ -21,7 +21,7 @@ export default class Room extends Piece {
     super(options);
     this.objectPositions = [];
     this.isoObjects = [];
-    this.objects = this.getRandomList(options.max_object_count * Math.random(), options.objects);
+   // this.objects = this.getRandomList(options.max_object_count * Math.random(), options.objects);
     
     this.walls.set_square([1, 1], this.room_size, false, true);
 

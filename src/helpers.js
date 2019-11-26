@@ -27,3 +27,8 @@ export function sortByDistance(array, x, y) {
       (a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)
     );
 }
+
+export function sortByNumberOfObjects(array){
+  console.log(array);
+  return array.sort((a,b) => b.exit[2].isoObjects.length - a.exit[2].isoObjects.length);
+}
