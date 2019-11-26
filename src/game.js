@@ -331,7 +331,7 @@ export class GameScene extends Phaser.Scene {
   async autoPlay(){
     await this.makeNextChoice();  
     if(this.dungeon.children.filter(room => room.isoObjects.length > 0).length > 0){
-      this.time.delayedCall(2000, async () => await this.autoPlay());
+      this.time.delayedCall(3000, async () => await this.autoPlay());
     }
   }
 
