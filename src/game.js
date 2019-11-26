@@ -8,7 +8,7 @@ import { sortByDistance } from "./helpers.js";
 import { sortByNumberOfObjects } from "./helpers.js";
 
 const TileSize = 38; // tile width and height
-
+let i = 5;
 export class GameScene extends Phaser.Scene {
   constructor() {
     super({
@@ -237,7 +237,7 @@ export class GameScene extends Phaser.Scene {
       } else if (e.key == "a") {
         this.autoPlay();
       } else if (e.key == 'o') {
-        this.oneSwitch();
+        this.makeNextChoice();
       }
     });
 
@@ -328,28 +328,14 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  async autoPlay() {
-    const roomsToVisit = [this.room];
-    const roomsVisited = [];
-    while (roomsToVisit.length) {
-      this.room = roomsToVisit.pop();
-      roomsVisited.push(this.room);
-      const targets = this.getTargets();
-      for (const target of targets) {
-        if ("exit" in target) {
-          const [xy, rot, room] = target.exit;
-          if (roomsVisited.indexOf(room) >= 0) {
-            continue;
-          } else {
-            roomsToVisit.push(room);
-            continue;
-          }
-        }
-      }
+  async autoPlay(){
+    await this.makeNextChoice();  
+    if(this.dungeon.children.filter(room => room.isoObjects.length > 0).length > 0){
+      this.time.delayedCall(2000, async () => await this.autoPlay());
     }
   }
 
-  async oneSwitch() {
+  async makeNextChoice() {
     this.selectNext();
     this.time.delayedCall(600, async () => await this.makeChoice());
   }
