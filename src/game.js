@@ -231,32 +231,26 @@ export class GameScene extends Phaser.Scene {
     let enabled = true;
     // respond to switch input
     this.input.keyboard.on("keydown", async (e) => {
-      if(enabled){
-      if (e.key == "Enter" || e.key == "ArrowLeft") {
+      if (enabled) {
         enabled = false;
-        await this.makeChoice();
-        enabled = true;
-      } else if (e.key == " " || e.key == "ArrowRight") {
-        enabled = false;
-        await this.selectNext();
-        enabled = true;
-      } else if (e.key == "a") {
-        enabled = false;
-        this.autoPlay();
-        enabled =  true;
-      } else if (e.key == 'o') {
-        enabled = false;
-        await this.makeNextChoice();
+        if (e.key == "Enter" || e.key == "ArrowLeft") {
+          await this.makeChoice();
+        } else if (e.key == " " || e.key == "ArrowRight") {
+          await this.selectNext();
+        } else if (e.key == "a") {
+          this.autoPlay();
+        } else if (e.key == 'o') {
+          await this.makeNextChoice();
+        }
         enabled = true;
       }
-    }
     });
 
     // respond to eye gaze user button click
     document
       .getElementById("left")
       .addEventListener("click", async (e) => {
-        if(enabled) {
+        if (enabled) {
           enabled = false;
           await this.makeChoice();
           enabled = true;
@@ -265,10 +259,10 @@ export class GameScene extends Phaser.Scene {
     document
       .getElementById("right")
       .addEventListener("click", async (e) => {
-        if(enabled){
+        if (enabled) {
           enabled = false;
           this.selectNext();
-          enabled =  true;
+          enabled = true;
         }
       });
 
