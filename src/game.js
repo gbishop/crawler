@@ -265,7 +265,6 @@ export class GameScene extends Phaser.Scene {
           enabled = true;
         }
       });
-
     document.getElementById("information_box").innerHTML = this.room.getDescription();
   }
 
@@ -413,13 +412,16 @@ export class GameScene extends Phaser.Scene {
   async visitChoice(target) {
     if ("exit" in target) {
       let [xy, rot, room] = target.exit;
-
       xy = this.room.global_pos(xy);
+  
       let [sx, sy] = [[0, 1], [-1, 0], [0, -1], [1, 0]][rot / 90];
       let x = xy[0] + sx;
       let y = xy[1] + sy;
       // get the path to the door
       let path = await this.pathTo(x * TileSize, y * TileSize);
+      // "select" exits along path
+      console.log(path);
+      console.log(this.room.exits);
       // move there
       await this.delay(300);
       await this.moveCharacter(path);
@@ -430,11 +432,21 @@ export class GameScene extends Phaser.Scene {
       let { x, y, z } = target.object.position();
       // get the path there
       let path = await this.pathTo(x, y);
+
       // allow the object to edit the path
+      let roomExits = this.room.exits.map(exit => ({x: this.room.global_pos(exit[0])[0], y: this.room.global_pos(exit[0])[1]}));
+      console.log(roomExits);
+
       path = target.object.path(path);
+      path.forEach(p => {
+        if(roomExits[p]){
+        console.log("this  point on the path is an exit, so select and choose it "+p);
+      }});
+      console.log(path);
       // go there
       await this.delay(300);
       await this.moveCharacter(path);
+      
       // interact with the object
       target.object.interact(this.player, this.room);
       // this should be in interact because we might not want to remove it
@@ -469,6 +481,7 @@ export class GameScene extends Phaser.Scene {
     });
     sortByNumberOfObjects(exits);
     targets = [...targets, ...exits];
+    console.log(targets);
     return targets;
   }
 
