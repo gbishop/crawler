@@ -5,8 +5,6 @@ import EasyStar from "./easystar/easystar.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 import EnhancedIsoSprite from "./EnhancedIsoSprite.js";
 import { sortByDistance } from "./helpers.js";
-import { sortByNumberOfObjects } from "./helpers.js";
-import { Z_PARTIAL_FLUSH } from "zlib";
 
 const TileSize = 38; // tile width and height
 let i = 5;
@@ -444,30 +442,34 @@ export class GameScene extends Phaser.Scene {
       let { x, y, z } = target.object.position();
       // get the path there
       let path = await this.pathTo(x, y);
-      console.log(path);
+      // console.log(path);
       // allow the object to edit the path
       let roomExits = this.room.exits.map(exit => ({ x: this.room.global_pos(exit[0])[0], y: this.room.global_pos(exit[0])[1] }));
-      console.log(roomExits);
+      // console.log(roomExits);
 
       path = target.object.path(path);
 
-      roomExits.forEach(exit => {
-        path.forEach(p => {
-          async () => {
-            if (p.x == exit.x && p.y == exit.y) {
-              if (isAutoplaying()) {
-                // simulate click and selection
-                await this.clickButton(document.getElementById('right'));
-                this.selectionIndicator.visible = true;
-                this.selectionIndicator.isoX = p.x;
-                this.selectionIndicator.isoY = p.y;
-                this.selectionIndicator._project();
-              }
-              console.log("exit");
-            }
-          }
-        });
-      });
+      // roomExits.forEach(exit => {
+      //   path.forEach(p => {
+      //     async () => {
+      //       if (p.x == exit.x && p.y == exit.y) {
+      //         if (isAutoplaying()) {
+      //           // simulate click and selection
+      //           await this.clickButton(document.getElementById('right'));
+      //           this.selectionIndicator.visible = true;
+      //           this.selectionIndicator.isoX = p.x;
+      //           this.selectionIndicator.isoY = p.y;
+      //           this.selectionIndicator._project();
+      //           await this.delay(300);
+      //           this.clickButton(document.getElementById('left'));
+      //           this.selectionIndicator.visible = false;
+      //           await this.delay(300);
+      //         }
+      //         console.log("exit");
+      //       }
+      //     }
+      //   });
+      // });
 
       if (isAutoplaying) {
         await this.clickButton(document.getElementById('right'));
@@ -476,11 +478,13 @@ export class GameScene extends Phaser.Scene {
         this.selectionIndicator.isoY = target.object.isoY;
         this.selectionIndicator._project();
         await this.delay(300);
-      }
+        this.clickButton(document.getElementById('left'));
+        this.selectionIndicator.visible = false;
+      } 
 
       // go there
-      await this.delay(300);
       await this.moveCharacter(path);
+      await this.delay(300);
 
       // interact with the object
       target.object.interact(this.player, this.room);
