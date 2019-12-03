@@ -469,28 +469,26 @@ export class GameScene extends Phaser.Scene {
       let exits = this.room.exits.map(exit => {
         let [xy, rot, room] = exit;
         const [x, y] = this.room.global_pos(xy);
-        return {x: x,y: y};
+        return { x: x, y: y };
       });
 
       if (isAutoplaying && this.room.isoObjects.length == 0) {
-        if (this.room.isoObjects.length == 0) {
-          // that means next target is an exit
-          console.log("selecting an exit");
-          console.log(path);
-          console.log(exits);
-          for (let i = 0; i < path.length; i++) {
-            for (let j = 0; j < exits.length; j++){
-              if (path[i].x == exits[j].x && path[i].y == exits[j].y) {
-                console.log("exit at "+exits[j].x+" "+exits[j].y);
-                await this.clickButton(document.getElementById('right'));
-                this.selectionIndicator.visible = true;
-                this.selectionIndicator.isoX = exits[j].x;
-                this.selectionIndicator.isoY = exits[j].y;
-                this.selectionIndicator._project();
-                await this.delay(300);
-                this.clickButton(document.getElementById('left'));
-                this.selectionIndicator.visible = false;
-              }
+        // that means next target is an exit
+        console.log("selecting an exit");
+        console.log(path);
+        console.log(exits);
+        for (let i = 0; i < path.length; i++) {
+          for (let j = 0; j < exits.length; j++) {
+            if (path[i].x == exits[j].x && path[i].y == exits[j].y) {
+              console.log("exit at " + exits[j].x + " " + exits[j].y);
+              await this.clickButton(document.getElementById('right'));
+              this.selectionIndicator.visible = true;
+              this.selectionIndicator.isoX = exits[j].x;
+              this.selectionIndicator.isoY = exits[j].y;
+              this.selectionIndicator._project();
+              await this.delay(300);
+              this.clickButton(document.getElementById('left'));
+              this.selectionIndicator.visible = false;
             }
           }
         }
