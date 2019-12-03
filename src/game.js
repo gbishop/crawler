@@ -409,6 +409,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   async visitChoice(target, isAutoplaying) {
+    console.log(target["exit"]);
     if ("exit" in target) {
       let [xy, rot, room] = target.exit;
       xy = this.room.global_pos(xy);
@@ -444,32 +445,8 @@ export class GameScene extends Phaser.Scene {
       let path = await this.pathTo(x, y);
       // console.log(path);
       // allow the object to edit the path
-      let roomExits = this.room.exits.map(exit => ({ x: this.room.global_pos(exit[0])[0], y: this.room.global_pos(exit[0])[1] }));
-      // console.log(roomExits);
 
       path = target.object.path(path);
-
-      // roomExits.forEach(exit => {
-      //   path.forEach(p => {
-      //     async () => {
-      //       if (p.x == exit.x && p.y == exit.y) {
-      //         if (isAutoplaying()) {
-      //           // simulate click and selection
-      //           await this.clickButton(document.getElementById('right'));
-      //           this.selectionIndicator.visible = true;
-      //           this.selectionIndicator.isoX = p.x;
-      //           this.selectionIndicator.isoY = p.y;
-      //           this.selectionIndicator._project();
-      //           await this.delay(300);
-      //           this.clickButton(document.getElementById('left'));
-      //           this.selectionIndicator.visible = false;
-      //           await this.delay(300);
-      //         }
-      //         console.log("exit");
-      //       }
-      //     }
-      //   });
-      // });
 
       if (isAutoplaying) {
         await this.clickButton(document.getElementById('right'));
@@ -480,11 +457,7 @@ export class GameScene extends Phaser.Scene {
         await this.delay(300);
         this.clickButton(document.getElementById('left'));
         this.selectionIndicator.visible = false;
-      } 
-
-      // go there
-      await this.moveCharacter(path);
-      await this.delay(300);
+      }
 
       // interact with the object
       target.object.interact(this.player, this.room);
@@ -492,6 +465,40 @@ export class GameScene extends Phaser.Scene {
       this.room.isoObjects = this.room.isoObjects.filter(
         o => o !== target.object
       );
+
+      let exits = this.room.exits.map(exit => {
+        let [xy, rot, room] = exit;
+        const [x, y] = this.room.global_pos(xy);
+        return {x: x,y: y};
+      });
+
+      if (isAutoplaying && this.room.isoObjects.length == 0) {
+        if (this.room.isoObjects.length == 0) {
+          // that means next target is an exit
+          console.log("selecting an exit");
+          console.log(path);
+          console.log(exits);
+          for (let i = 0; i < path.length; i++) {
+            for (let j = 0; j < exits.length; j++){
+              if (path[i].x == exits[j].x && path[i].y == exits[j].y) {
+                console.log("exit at "+exits[j].x+" "+exits[j].y);
+                await this.clickButton(document.getElementById('right'));
+                this.selectionIndicator.visible = true;
+                this.selectionIndicator.isoX = exits[j].x;
+                this.selectionIndicator.isoY = exits[j].y;
+                this.selectionIndicator._project();
+                await this.delay(300);
+                this.clickButton(document.getElementById('left'));
+                this.selectionIndicator.visible = false;
+              }
+            }
+          }
+        }
+      }
+
+      // go there
+      await this.moveCharacter(path);
+      await this.delay(300);
       this.score++;
     }
   }
