@@ -34,6 +34,9 @@ export class GameScene extends Phaser.Scene {
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
+
+    // used in one switch
+    this.oneSwitchHandler = null;
   }
 
   preload() {
@@ -71,7 +74,7 @@ export class GameScene extends Phaser.Scene {
 
     this.dungeon = new Dungeon({
       size: [100, 100],
-      seed: "abcd", //omit for generated seed
+      seed: "Abcd", //omit for generated seed
       rooms: {
         initial: {
           min_size: [3, 3],
@@ -90,7 +93,7 @@ export class GameScene extends Phaser.Scene {
       symmetric_rooms: false, // exits must be in the center of a wall if true
       interconnects: 0, //extra corridors to connect rooms and make circular paths. not 100% guaranteed
       max_interconnect_length: 10,
-      room_count: 40
+      room_count: 10
     });
     this.dungeon.generate();
     let [ix, iy] = this.dungeon.start_pos;
@@ -220,37 +223,41 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.selectionIndicator, true, 0.2, 0.2);
     this.cameras.main.setDeadzone(10, 10);
 
-    let enabled = true;
+    this.inputEnabled = true;
     // respond to switch input
     this.input.keyboard.on("keydown", async e => {
-      if (enabled) {
-        enabled = false;
+      if (this.inputEnabled) {
+        this.inputEnabled = false;
         if (e.key == "Enter" || e.key == "ArrowLeft") {
           await this.makeChoice();
         } else if (e.key == " " || e.key == "ArrowRight") {
           await this.selectNext();
         } else if (e.key == "a") {
-          this.autoPlay();
+          await this.autoPlay();
         }
-        enabled = true;
+        this.inputEnabled = true;
       }
     });
 
     // respond to eye gaze user button click
     document.getElementById("select").addEventListener("click", async e => {
-      if (enabled) {
-        enabled = false;
+      if (this.inputEnabled) {
+        this.inputEnabled = false;
         await this.makeChoice();
-        enabled = true;
+        this.inputEnabled = true;
       }
     });
     document.getElementById("next").addEventListener("click", async e => {
-      if (enabled) {
-        enabled = false;
+      if (this.inputEnabled) {
+        this.inputEnabled = false;
         this.selectNext();
-        enabled = true;
+        this.inputEnabled = true;
       }
     });
+
+    if (settings.mode != "full") {
+      this.autoPlay();
+    }
     /*
     document.getElementById(
       "information_box"
@@ -337,6 +344,14 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  // allow waiting for input in the midst of autoplay
+  async waitForInput() {
+    return new Promise((resolve, reject) => {
+      this.oneSwitchHandler = resolve;
+      this.inputEnabled = true;
+    });
+  }
+
   // The loop pulls off the top room to visit.
   // If you aren't already in that room it computes the path to
   // there. Get the list of exits for the current room and compare
@@ -367,26 +382,30 @@ export class GameScene extends Phaser.Scene {
         this.time.delayedCall(t, resolve, null, null)
       );
     // show the button we are clicking
-    const fakeClick = async selector => {
+    const simulateClick = async selector => {
       const button = document.querySelector(selector);
       button.style.backgroundColor = "#99badd";
       await delay(300);
       button.style.backgroundColor = "#FFFFFF";
     };
     // make it look like the player is selecting the object
-    const fakeSelect = async obj => {
-      await fakeClick("button#next");
+    const simulateSelect = async obj => {
+      await simulateClick("button#next");
       this.selectionIndicator.isoX = obj.isoX;
       this.selectionIndicator.isoY = obj.isoY;
       this.selectionIndicator.visible = true;
-      await delay(300);
-      await fakeClick("button#select");
+      if (settings.mode == "one") {
+        await this.waitForInput();
+      } else {
+        await delay(300);
+      }
+      await simulateClick("button#select");
       this.selectionIndicator.visible = false;
     };
     // return the exit that is on the path
     const firstExitOnPath = (exits, path) => {
-      for (const exit of exits) {
-        for (const { x, y } of path) {
+      for (const { x, y } of path) {
+        for (const exit of exits) {
           if (x == exit.x && y == exit.y) {
             return exit;
           }
@@ -406,7 +425,7 @@ export class GameScene extends Phaser.Scene {
         const exit = firstExitOnPath(exits, path);
         // if we found it go there
         if (exit) {
-          await fakeSelect(exit.object);
+          await simulateSelect(exit.object);
           await this.visitChoice(exit);
         } else {
           // if we didn't something is really wrong
@@ -427,7 +446,7 @@ export class GameScene extends Phaser.Scene {
             targetsToVisit.push(target);
           }
         } else {
-          await fakeSelect(target.object);
+          await simulateSelect(target.object);
           await this.visitChoice(target);
         }
       }
@@ -435,6 +454,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   async makeChoice() {
+    if (this.oneSwitchHandler) {
+      this.oneSwitchHandler();
+      this.oneSwitchHandler = null;
+      return;
+    }
     if (this.target) {
       this.targetIndex = -1;
       this.selectionIndicator.visible = false;
@@ -509,6 +533,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   selectNext() {
+    if (this.oneSwitchHandler) {
+      this.oneSwitchHandler();
+      this.oneSwitchHandler = null;
+      return;
+    }
     const targets = this.getTargets();
     // console.log("targets", targets);
     // choose one based on the index
