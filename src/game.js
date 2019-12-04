@@ -131,6 +131,14 @@ export class GameScene extends Phaser.Scene {
         Rock_1: -1 / 2,
         Rock_2: -1 / 2
       };
+      let audio = {
+        Chest1_closed: 0,
+        Chest2_opened: 0,
+        fountain: 0,
+        over_grass_flower1: -1 / 2,
+        Rock_1: -1 / 2,
+        Rock_2: -1 / 2
+      }
       let positions = this.generateObjectPositions(room);
       positions = positions.filter(([px, py]) => px != ix || py != iy);
       positions = Phaser.Math.RND.shuffle(positions);
@@ -151,7 +159,8 @@ export class GameScene extends Phaser.Scene {
           group: this.isoGroup,
           description: o,
           reward: 1,
-          room: room
+          room: room,
+          audio: audio[o],
         });
         isoObj.scale = Math.sqrt(3) / isoObj.width;
         room.isoObjects.push(isoObj);
@@ -251,11 +260,7 @@ export class GameScene extends Phaser.Scene {
         enabled = true;
       }
     });
-    /*
-    document.getElementById(
-      "information_box"
-    ).innerHTML = this.room.getDescription();
-    */
+    this.updateRoomDescription();
   }
 
   pathTo(x, y) {
@@ -321,20 +326,36 @@ export class GameScene extends Phaser.Scene {
       this.tweens.timeline({
         tweens: tweens,
         onComplete: () => {
-          if (this.selectionIndicator.audio != null) {
+          if (this.selectionIndicator.audio) {
             let music = this.sound.add(this.selectionIndicator.audio);
             music.play();
           }
           this.player.anims.stop();
           resolve();
-          /*
-          document.getElementById(
-            "information_box"
-          ).innerHTML = this.room.getDescription();
-          */
+          this.updateRoomDescription();
         }
       });
     });
+  }
+
+  updateRoomDescription(){
+    document.getElementById("information_box").innerHTML = this.getRoomDescription();
+  }
+
+  getRoomDescription(){
+    if(this.room.isoObjects.length == 0){
+      return "This room is empty! Go explore others."
+    }
+    let description = "You've found ";
+    let index = 0;
+    this.room.isoObjects.forEach(o => {
+      if(index == this.room.isoObjects.length-1 && this.room.isoObjects.length > 1){
+        description += " and ";
+      }
+      description += o.getDescription();
+      index++;
+    });
+    return description;
   }
 
   // The loop pulls off the top room to visit.
@@ -367,26 +388,27 @@ export class GameScene extends Phaser.Scene {
         this.time.delayedCall(t, resolve, null, null)
       );
     // show the button we are clicking
-    const fakeClick = async selector => {
+    const simulateClick = async selector => {
       const button = document.querySelector(selector);
       button.style.backgroundColor = "#99badd";
-      await delay(300);
+      await delay(settings.delay);
       button.style.backgroundColor = "#FFFFFF";
     };
     // make it look like the player is selecting the object
-    const fakeSelect = async obj => {
-      await fakeClick("button#next");
+    const simulateSelect = async obj => {
+      await simulateClick("button#next");
       this.selectionIndicator.isoX = obj.isoX;
       this.selectionIndicator.isoY = obj.isoY;
       this.selectionIndicator.visible = true;
-      await delay(300);
-      await fakeClick("button#select");
+      await delay(settings.delay);
+      await simulateClick("button#select");
       this.selectionIndicator.visible = false;
+      this.updateRoomDescription();
     };
     // return the exit that is on the path
     const firstExitOnPath = (exits, path) => {
-      for (const exit of exits) {
-        for (const { x, y } of path) {
+      for (const { x, y } of path) {
+        for (const exit of exits) {
           if (x == exit.x && y == exit.y) {
             return exit;
           }
@@ -406,7 +428,7 @@ export class GameScene extends Phaser.Scene {
         const exit = firstExitOnPath(exits, path);
         // if we found it go there
         if (exit) {
-          await fakeSelect(exit.object);
+          await simulateSelect(exit.object);
           await this.visitChoice(exit);
         } else {
           // if we didn't something is really wrong
@@ -427,7 +449,7 @@ export class GameScene extends Phaser.Scene {
             targetsToVisit.push(target);
           }
         } else {
-          await fakeSelect(target.object);
+          await simulateSelect(target.object);
           await this.visitChoice(target);
         }
       }
@@ -440,6 +462,7 @@ export class GameScene extends Phaser.Scene {
       this.selectionIndicator.visible = false;
       await this.visitChoice(this.target);
       this.target = null;
+      this.updateRoomDescription();
     }
   }
 
@@ -536,4 +559,6 @@ export class GameScene extends Phaser.Scene {
     }
     return positions;
   }
+
+
 }
