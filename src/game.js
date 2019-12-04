@@ -217,7 +217,7 @@ export class GameScene extends Phaser.Scene {
     // player when the player moves. I'm using this hack to keep the selection
     // in view without too much motion. I still think it could be better.
     this.cameras.main.setZoom(38);
-    this.cameras.main.startFollow(this.selectionIndicator, true, 1, 1);
+    this.cameras.main.startFollow(this.selectionIndicator, true, 0.2, 0.2);
     this.cameras.main.setDeadzone(10, 10);
 
     let enabled = true;
