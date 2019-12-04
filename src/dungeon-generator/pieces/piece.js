@@ -33,7 +33,6 @@ export default class Piece {
     this.perimeter = [];
     this.exits = [];
     this.children = [];
-    this.objects = [];
   }
 
   get rect() {

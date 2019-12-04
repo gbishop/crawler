@@ -28,7 +28,6 @@ export default class Dungeon extends Generator {
         symmetric_rooms: false, // exits must be in the middle of walls
         interconnects: 1, //extra corridors to connect rooms and make circular paths. not guaranteed
         max_interconnect_length: 10,
-        max_object_count: 5,
         room_count: 10
       },
       options
@@ -196,7 +195,6 @@ export default class Dungeon extends Generator {
     let room = new Room({
       size: this.random.vec(opts.min_size, opts.max_size),
       max_exits: opts.max_exits,
-      max_object_count: opts.max_object_count,
       symmetric: this.symmetric_rooms,
       tag: key
     });

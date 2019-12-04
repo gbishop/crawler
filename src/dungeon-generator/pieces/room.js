@@ -1,5 +1,5 @@
 import Piece from "./piece.js";
-import { iter_range, array_test } from "../utils/index.js";
+import { iter_range } from "../utils/index.js";
 
 export default class Room extends Piece {
   constructor(options) {
@@ -8,8 +8,7 @@ export default class Room extends Piece {
         */
     options.room_size = options.size;
     options.size = [options.size[0] + 2, options.size[1] + 2];
-    options.objects = ["Chest1_closed", "Chest2_opened", "fountain", "Rock_1", "Rock_2", "over_grass_flower1"];
-    options.max_object_count = 3;
+
     options = Object.assign(
       {},
       {
@@ -19,10 +18,7 @@ export default class Room extends Piece {
     );
 
     super(options);
-    this.objectPositions = [];
-    this.isoObjects = [];
-   // this.objects = this.getRandomList(options.max_object_count * Math.random(), options.objects);
-    
+
     this.walls.set_square([1, 1], this.room_size, false, true);
 
     if (!this.symmetric) {
@@ -50,30 +46,5 @@ export default class Room extends Piece {
         [[0, h], 90]
       ];
     }
-  }
-  getRandomList(size, arr) {
-    let l = [];
-    while (size > 0) {
-      let item = arr[Math.floor(Math.random() * arr.length)];
-      l.push(item);
-      size--;
-    }
-    return l;
-  }
-
-  getDescription(){
-    if(this.isoObjects.length == 0){
-      return "This room is empty! Go explore others."
-    }
-    let description = "You've found ";
-    let index = 0;
-    this.isoObjects.forEach(o => {
-      if(index == this.isoObjects.length-1 && this.isoObjects.length > 1){
-        description += " and ";
-      }
-      description += o.getDescription();
-      index++;
-    });
-    return description;
   }
 }
