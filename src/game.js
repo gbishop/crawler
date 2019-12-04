@@ -220,26 +220,42 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.selectionIndicator, true, 1, 1);
     this.cameras.main.setDeadzone(10, 10);
 
+    let enabled = true;
     // respond to switch input
-    this.input.keyboard.on("keydown", e => {
-      console.log("key", e.key);
-      if (e.key == "Enter" || e.key == "ArrowLeft") {
-        this.makeChoice();
-      } else if (e.key == " " || e.key == "ArrowRight") {
-        this.selectNext();
-      } else if (e.key == "A") {
-        console.log("autoplay");
-        this.autoPlay();
+    this.input.keyboard.on("keydown", async e => {
+      if (enabled) {
+        enabled = false;
+        if (e.key == "Enter" || e.key == "ArrowLeft") {
+          await this.makeChoice();
+        } else if (e.key == " " || e.key == "ArrowRight") {
+          await this.selectNext();
+        } else if (e.key == "a") {
+          this.autoPlay();
+        }
+        enabled = true;
       }
     });
 
     // respond to eye gaze user button click
-    document
-      .getElementById("left")
-      .addEventListener("click", e => this.makeChoice());
-    document
-      .getElementById("right")
-      .addEventListener("click", e => this.selectNext());
+    document.getElementById("select").addEventListener("click", async e => {
+      if (enabled) {
+        enabled = false;
+        await this.makeChoice();
+        enabled = true;
+      }
+    });
+    document.getElementById("next").addEventListener("click", async e => {
+      if (enabled) {
+        enabled = false;
+        this.selectNext();
+        enabled = true;
+      }
+    });
+    /*
+    document.getElementById(
+      "information_box"
+    ).innerHTML = this.room.getDescription();
+    */
   }
 
   pathTo(x, y) {
@@ -305,31 +321,115 @@ export class GameScene extends Phaser.Scene {
       this.tweens.timeline({
         tweens: tweens,
         onComplete: () => {
+          if (this.selectionIndicator.audio != null) {
+            let music = this.sound.add(this.selectionIndicator.audio);
+            music.play();
+          }
           this.player.anims.stop();
           resolve();
+          /*
+          document.getElementById(
+            "information_box"
+          ).innerHTML = this.room.getDescription();
+          */
         }
       });
     });
   }
 
+  // The loop pulls off the top room to visit.
+  // If you aren't already in that room it computes the path to
+  // there. Get the list of exits for the current room and compare
+  // them to the points on the path you just computed.
+  // When you get a hit, first show the player moving to the exit,
+  // then update the room, and repeat.
+  // That way it looks like the player stepped from room to room.
+
   async autoPlay() {
-    const roomsToVisit = [this.room];
+    // list of places yet to visit
+    // I'm faking up the initial one to get things started
+    // later ones will be targets as returned by getTargets
+    const targetsToVisit = [
+      {
+        x: this.player.isoX,
+        y: this.player.isoY,
+        object: this.player,
+        exit: [[], 0, this.room]
+      }
+    ];
+    // keep track of rooms visited so we don't get into loops
     const roomsVisited = [];
-    while (roomsToVisit.length) {
-      this.room = roomsToVisit.pop();
-      roomsVisited.push(this.room);
-      const targets = this.getTargets();
-      for (const target of targets) {
-        if ("exit" in target) {
-          const [xy, rot, room] = target.exit;
-          if (roomsVisited.indexOf(room) >= 0) {
-            continue;
-          } else {
-            roomsToVisit.push(room);
-            continue;
+    // I'm making these helps internal, they could be methods
+
+    // wait for milliseconds to elapse
+    const delay = async t =>
+      new Promise((resolve, reject) =>
+        this.time.delayedCall(t, resolve, null, null)
+      );
+    // show the button we are clicking
+    const fakeClick = async selector => {
+      const button = document.querySelector(selector);
+      button.style.backgroundColor = "#99badd";
+      await delay(300);
+      button.style.backgroundColor = "#FFFFFF";
+    };
+    // make it look like the player is selecting the object
+    const fakeSelect = async obj => {
+      await fakeClick("button#next");
+      this.selectionIndicator.isoX = obj.isoX;
+      this.selectionIndicator.isoY = obj.isoY;
+      this.selectionIndicator.visible = true;
+      await delay(300);
+      await fakeClick("button#select");
+      this.selectionIndicator.visible = false;
+    };
+    // return the exit that is on the path
+    const firstExitOnPath = (exits, path) => {
+      for (const exit of exits) {
+        for (const { x, y } of path) {
+          if (x == exit.x && y == exit.y) {
+            return exit;
           }
         }
-        await this.visitChoice(target);
+      }
+    };
+    // repeat for each place we need to visit
+    while (targetsToVisit.length) {
+      // get the next room to visit
+      let { x, y, exit } = targetsToVisit.pop();
+      let nextroom = exit[2];
+      // while we aren't in that room, step toward it
+      while (this.room != nextroom) {
+        const path = await this.pathTo(x, y);
+        const exits = this.getTargets().filter(x => "exit" in x);
+        // find the first exit on the path
+        const exit = firstExitOnPath(exits, path);
+        // if we found it go there
+        if (exit) {
+          await fakeSelect(exit.object);
+          await this.visitChoice(exit);
+        } else {
+          // if we didn't something is really wrong
+          console.log("no exit");
+          return;
+        }
+      }
+      // remember that we came here
+      roomsVisited.push(this.room);
+      // get the local targets
+      const targets = this.getTargets();
+      // visit each of the targets
+      for (const target of targets) {
+        // exits are pushed onto the stack to handle later
+        if ("exit" in target) {
+          const [xy, rot, room] = target.exit;
+          if (roomsVisited.indexOf(room) < 0) {
+            targetsToVisit.push(target);
+          }
+        } else {
+          await fakeSelect(target.object);
+          await this.visitChoice(target);
+        }
       }
     }
   }
