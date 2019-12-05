@@ -70,7 +70,7 @@ export class GameScene extends Phaser.Scene {
     this.load.audio("doorClose", "assets/audio/doorClose.mp3");
     this.load.audio("knock", "assets/audio/knock.mp3");
     this.load.audio("thump", "assets/audio/thump.mp3");
-    this.load.audio("waterfall", "assets/audio/waterfall.mov");
+    this.load.audio("waterfall", "assets/audio/waterfall.mp3");
   }
 
   create() {
@@ -258,6 +258,8 @@ export class GameScene extends Phaser.Scene {
     });
 
     if (settings.mode != "full") {
+      this.inputEnabled = false;
+      document.getElementById('game').click();
       this.autoPlay();
     }
     this.updateRoomDescription();
