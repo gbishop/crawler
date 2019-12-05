@@ -66,6 +66,11 @@ export class GameScene extends Phaser.Scene {
     ];
 
     this.load.audio("click", "assets/audio/click.mp3");
+    this.load.audio("ding", "assets/audio/ding.mp3");
+    this.load.audio("doorClose", "assets/audio/doorClose.mp3");
+    this.load.audio("knock", "assets/audio/knock.mp3");
+    this.load.audio("thump", "assets/audio/thump.mp3");
+    this.load.audio("waterfall", "assets/audio/waterfall.mov");
   }
 
   create() {
@@ -111,18 +116,24 @@ export class GameScene extends Phaser.Scene {
         fountain: 0,
         over_grass_flower1: -1 / 2,
         Rock_1: -1 / 2,
-        Rock_2: -1 / 2,
-        door: -2
+        Rock_2: -1 / 2
       };
       let audio = {
-        Chest1_closed: "click",
-        Chest2_opened: "click",
-        fountain: "click",
-        over_grass_flower1: "click",
-        Rock_1: "click",
-        Rock_2: "click",
-        door: "click"
+        Chest1_closed: "knock",
+        Chest2_opened: "doorClose",
+        fountain: "waterfall",
+        over_grass_flower1: "ding",
+        Rock_1: "thump",
+        Rock_2: "thump"
       }
+      // let durations = {
+      //   Chest1_closed: 0,
+      //   Chest2_opened: 0,
+      //   fountain: 5000,
+      //   over_grass_flower1: 0,
+      //   Rock_1: 0,
+      //   Rock_2: 0
+      // };
       let positions = this.generateObjectPositions(room);
       // remove the player position
       positions = positions.filter(([px, py]) => px != ix || py != iy);
@@ -506,10 +517,10 @@ export class GameScene extends Phaser.Scene {
       let keep = await target.object.interact(this.player, this.room);
       if (!keep) {
         this.map.removeObject(target.object, x, y);
-        target.object.destroy();
         this.updateRoomDescription();
         let music = this.sound.add(target.object.audio);
         music.play();
+        target.object.destroy();
       }
       this.score++;
     }
