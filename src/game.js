@@ -146,7 +146,6 @@ export class GameScene extends Phaser.Scene {
           room: room,
           audio: audio[o]
         });
-        console.log(isoObj);
         isoObj.scale = Math.sqrt(3) / isoObj.width;
         this.map.addObject(isoObj, ox, oy);
         // eliminate this position and its neighbors
@@ -319,17 +318,8 @@ export class GameScene extends Phaser.Scene {
       this.tweens.timeline({
         tweens: tweens,
         onComplete: () => {
-          if (this.target != null && this.target.object.audio != null) {
-            console.log(this.target.object.audio);
-            let music = this.sound.add(this.target.object.audio);
-            music.play();
-          } else {
-            let music = this.sound.add("click");
-            music.play();
-          }
           this.player.anims.stop();
           resolve();
-          this.updateRoomDescription();
         }
       });
     });
@@ -347,7 +337,6 @@ export class GameScene extends Phaser.Scene {
    async simulateClick(selector) {
     const button = document.querySelector(selector);
     button.style.backgroundColor = "#99badd";
-    console.log(settings);
     await this.delay(settings.speed);
     button.style.backgroundColor = "#FFFFFF";
   };
@@ -483,7 +472,6 @@ export class GameScene extends Phaser.Scene {
       this.selectionIndicator.visible = false;
       await this.visitChoice(this.target);
       this.target = null;
-      this.updateRoomDescription();
     }
   }
 
@@ -500,6 +488,9 @@ export class GameScene extends Phaser.Scene {
       await this.moveCharacter(path);
       // it is now the current room
       this.room = nextroom;
+      this.updateRoomDescription();
+      let music = this.sound.add("click");
+      music.play();
     } else {
       // allow the object to provide the destination
       let { x, y, z } = target.object.position();
@@ -515,6 +506,8 @@ export class GameScene extends Phaser.Scene {
         this.map.removeObject(target.object, x, y);
         target.object.destroy();
         this.updateRoomDescription();
+        let music = this.sound.add(this.target.object.audio);
+        music.play();
       }
       this.score++;
     }
@@ -530,7 +523,6 @@ export class GameScene extends Phaser.Scene {
     sortByDistance(targets, px, py);
     let exits = this.room.exits.map(exit => {
       let { x, y } = exit;
-      // console.log("exit", x, y);
       const tiles = this.tiles.filter(t => t.isoX == x && t.isoY == y);
       return {
         object: tiles[0],
@@ -547,7 +539,6 @@ export class GameScene extends Phaser.Scene {
   generateObjectPositions(room) {
     // positions is an array of [x,y] as viable locations
     // to place an object
-    // console.log(room);
     let positions = [];
     let x = room.x;
     let y = room.y;
