@@ -258,8 +258,6 @@ export class GameScene extends Phaser.Scene {
     });
 
     if (settings.mode != "full") {
-      this.inputEnabled = false;
-      document.getElementById('game').click();
       this.autoPlay();
     }
     this.updateRoomDescription();
