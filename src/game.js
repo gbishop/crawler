@@ -111,7 +111,8 @@ export class GameScene extends Phaser.Scene {
         fountain: 0,
         over_grass_flower1: -1 / 2,
         Rock_1: -1 / 2,
-        Rock_2: -1 / 2
+        Rock_2: -1 / 2,
+        door: -2
       };
       let audio = {
         Chest1_closed: "click",
@@ -360,6 +361,7 @@ export class GameScene extends Phaser.Scene {
     // list of places yet to visit
     // I'm faking up the initial one to get things started
     // later ones will be targets as returned by getTargets
+    
     const targetsToVisit = [
       {
         x: this.player.isoX,
@@ -506,7 +508,7 @@ export class GameScene extends Phaser.Scene {
         this.map.removeObject(target.object, x, y);
         target.object.destroy();
         this.updateRoomDescription();
-        let music = this.sound.add(this.target.object.audio);
+        let music = this.sound.add(target.object.audio);
         music.play();
       }
       this.score++;
