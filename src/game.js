@@ -273,7 +273,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   lighting() {
-    return;
     this.isoGroup.getChildren().forEach(go => {
       const tile = /** @type{IsoSprite} */ (go);
       if (tile === this.selectionIndicator) return;
