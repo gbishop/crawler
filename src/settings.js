@@ -5,6 +5,7 @@ class Settings {
   constructor() {
     this.mode = "auto";
     this.sound = true;
+    this.speed = 300;
   }
 
   persist() {

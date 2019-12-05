@@ -9,9 +9,9 @@
   <body class="play">
     <div id="play" class="row">
       <button id="setup" title="settings"><img src="assets/gear.png" /></button>
-      <button id="left" class="col choice">Select</button>
-      <div id="game" class="col"><span id="information_box">Score: </span></div>
-      <button id="right" class="col choice">Next</button>
+      <button id="select" class="col choice">Select</button>
+      <div id="game" class="col"><span id="information_box"></span></div>
+      <button id="next" class="col choice">Next</button>
     </div>
     <div id="settings">
       <h1>Crawler demo</h1>
@@ -38,7 +38,10 @@
           ><b>Full play mode</b> has the player making the choices.</label
         >
       </div>
-
+      <div>
+        <label for="delay">Delay between 300 and 5000:</label>
+        <input type="number" id="delay" min="300" max="5000"/>
+      </div>
       <p>
         More info.
       </p>
@@ -51,7 +54,6 @@
       <p>
         Use the gear icon in the upper right to come back here from the game
       </p>
-
       <button id="playButton">Play</button>
     </div>
   </body>
