@@ -146,6 +146,7 @@ export class GameScene extends Phaser.Scene {
           room: room,
           audio: audio[o]
         });
+        console.log(isoObj);
         isoObj.scale = Math.sqrt(3) / isoObj.width;
         this.map.addObject(isoObj, ox, oy);
         // eliminate this position and its neighbors
@@ -256,13 +257,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   getRoomDescription(){
-    if(this.room.isoObjects.length == 0){
+    if(this.room.objects.length == 0){
       return "This room is empty! Go explore others."
     }
     let description = "You've found ";
     let index = 0;
-    this.room.isoObjects.forEach(o => {
-      if(index == this.room.isoObjects.length-1 && this.room.isoObjects.length > 1){
+    this.room.objects.forEach(o => {
+      if(index == this.room.objects.length-1 && this.room.objects.length > 1){
         description += " and ";
       }
       description += o.getDescription();
@@ -319,13 +320,13 @@ export class GameScene extends Phaser.Scene {
       this.tweens.timeline({
         tweens: tweens,
         onComplete: () => {
-          if (this.selectionIndicator.audio != null) {
-            console.log(this.selectionIndicator.audio);
-            let music = this.sound.add(this.selectionIndicator.audio);
+          if (this.target != null && this.target.object.audio != null) {
+            console.log(this.target.object.audio);
+            let music = this.sound.add(this.target.object.audio);
             music.play();
           } else {
-          let music = this.sound.add("click");
-          music.play();
+            let music = this.sound.add("click");
+            music.play();
           }
           this.player.anims.stop();
           resolve();
@@ -341,6 +342,22 @@ export class GameScene extends Phaser.Scene {
       this.oneSwitchHandler = resolve;
       this.inputEnabled = true;
     });
+  }
+  
+   // show the button we are clicking
+   async simulateClick(selector) {
+    const button = document.querySelector(selector);
+    button.style.backgroundColor = "#99badd";
+    console.log(settings);
+    await this.delay(settings.speed);
+    button.style.backgroundColor = "#FFFFFF";
+  };
+
+    // wait for milliseconds to elapse
+  async delay(t) {
+    return new Promise((resolve, reject) =>
+    this.time.delayedCall(t, resolve, null, null)
+    );
   }
 
   // The loop pulls off the top room to visit.
@@ -367,30 +384,20 @@ export class GameScene extends Phaser.Scene {
     const roomsVisited = [];
     // I'm making these helps internal, they could be methods
 
-    // wait for milliseconds to elapse
-    const delay = async t =>
-      new Promise((resolve, reject) =>
-        this.time.delayedCall(t, resolve, null, null)
-      );
-    // show the button we are clicking
-    const simulateClick = async selector => {
-      const button = document.querySelector(selector);
-      button.style.backgroundColor = "#99badd";
-      await delay(300);
-      button.style.backgroundColor = "#FFFFFF";
-    };
+
     // make it look like the player is selecting the object
     const simulateSelect = async obj => {
-      await simulateClick("button#next");
+      await this.simulateClick("button#next");
       this.selectionIndicator.isoX = obj.isoX;
       this.selectionIndicator.isoY = obj.isoY;
       this.selectionIndicator.visible = true;
       if (settings.mode == "one") {
         await this.waitForInput();
       } else {
-        await delay(300);
+        await this.delay(settings.speed);
       }
-      await simulateClick("button#select");
+      await this.simulateClick("button#select");
+      this.updateRoomDescription();
       this.selectionIndicator.visible = false;
     };
     // return the exit that is on the path
@@ -423,6 +430,7 @@ export class GameScene extends Phaser.Scene {
         if (exit) {
           await simulateSelect(exit.object);
           await this.visitChoice(exit);
+          this.updateRoomDescription();
         } else {
           // if we didn't something is really wrong
           console.log("no exit");
@@ -457,6 +465,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   selectNext() {
+    this.simulateClick("#next");
     this.handleOneSwitch();
     const targets = this.getTargets();
     this.targetIndex += 1;
@@ -468,16 +477,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   async makeChoice() {
-    if (this.oneSwitchHandler) {
-      this.oneSwitchHandler();
-      this.oneSwitchHandler = null;
-      return;
-    }
+    this.simulateClick("#select");
+    this.handleOneSwitch();
     if (this.target) {
       this.targetIndex = -1;
       this.selectionIndicator.visible = false;
       await this.visitChoice(this.target);
       this.target = null;
+      this.updateRoomDescription();
     }
   }
 
@@ -508,6 +515,7 @@ export class GameScene extends Phaser.Scene {
       if (!keep) {
         this.map.removeObject(target.object, x, y);
         target.object.destroy();
+        this.updateRoomDescription();
       }
       this.score++;
     }
