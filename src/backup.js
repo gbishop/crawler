@@ -1,4 +1,3 @@
-
 /** @typedef {import('phaser')} Phaser */
 import settings from "./settings.js";
 import Dungeon from "./dungeon-generator/generators/dungeon.js";
@@ -36,7 +35,6 @@ export class GameScene extends Phaser.Scene {
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
 
-    // used in one switch
     this.oneSwitchHandler = null;
   }
 
@@ -164,7 +162,7 @@ export class GameScene extends Phaser.Scene {
           description: o,
           reward: 1,
           room: room,
-          audio: audio[o]
+          audio: audio[o],
         });
         isoObj.scale = Math.sqrt(3) / isoObj.width;
         room.isoObjects.push(isoObj);
@@ -230,7 +228,7 @@ export class GameScene extends Phaser.Scene {
     // player when the player moves. I'm using this hack to keep the selection
     // in view without too much motion. I still think it could be better.
     this.cameras.main.setZoom(38);
-    this.cameras.main.startFollow(this.selectionIndicator, true, 0.2, 0.2);
+    this.cameras.main.startFollow(this.selectionIndicator, true, 1, 1);
     this.cameras.main.setDeadzone(10, 10);
 
     this.inputEnabled = true;
@@ -243,7 +241,7 @@ export class GameScene extends Phaser.Scene {
         } else if (e.key == " " || e.key == "ArrowRight") {
           await this.selectNext();
         } else if (e.key == "a") {
-          await this.autoPlay();
+          this.autoPlay();
         }
         this.inputEnabled = true;
       }
@@ -263,32 +261,18 @@ export class GameScene extends Phaser.Scene {
         this.selectNext();
         this.inputEnabled = true;
       }
+      if(settings.mode != "full"){
+        this.autoPlay();
+      }
     });
-
-    if (settings.mode != "full") {
-      this.autoPlay();
-    }
     this.updateRoomDescription();
   }
 
-  updateRoomDescription(){
-    document.getElementById("information_box").innerHTML = this.getRoomDescription();
-  }
-
-  getRoomDescription(){
-    if(this.room.isoObjects.length == 0){
-      return "This room is empty! Go explore others."
-    }
-    let description = "You've found ";
-    let index = 0;
-    this.room.isoObjects.forEach(o => {
-      if(index == this.room.isoObjects.length-1 && this.room.isoObjects.length > 1){
-        description += " and ";
-      }
-      description += o.getDescription();
-      index++;
+  async waitForInput(){
+    return new Promise((resolve, reject) => {
+      this.oneSwitchHandler = resolve;
+      this.inputEnabled = true;
     });
-    return description;
   }
 
   pathTo(x, y) {
@@ -354,28 +338,36 @@ export class GameScene extends Phaser.Scene {
       this.tweens.timeline({
         tweens: tweens,
         onComplete: () => {
-          if (this.selectionIndicator.audio != null) {
+          if (this.selectionIndicator.audio) {
             let music = this.sound.add(this.selectionIndicator.audio);
             music.play();
           }
           this.player.anims.stop();
           resolve();
-          /*
-          document.getElementById(
-            "information_box"
-          ).innerHTML = this.room.getDescription();
-          */
+          this.updateRoomDescription();
         }
       });
     });
   }
 
-  // allow waiting for input in the midst of autoplay
-  async waitForInput() {
-    return new Promise((resolve, reject) => {
-      this.oneSwitchHandler = resolve;
-      this.inputEnabled = true;
+  updateRoomDescription(){
+    document.getElementById("information_box").innerHTML = this.getRoomDescription();
+  }
+
+  getRoomDescription(){
+    if(this.room.isoObjects.length == 0){
+      return "This room is empty! Go explore others."
+    }
+    let description = "You've found ";
+    let index = 0;
+    this.room.isoObjects.forEach(o => {
+      if(index == this.room.isoObjects.length-1 && this.room.isoObjects.length > 1){
+        description += " and ";
+      }
+      description += o.getDescription();
+      index++;
     });
+    return description;
   }
 
   // The loop pulls off the top room to visit.
@@ -411,7 +403,7 @@ export class GameScene extends Phaser.Scene {
     const simulateClick = async selector => {
       const button = document.querySelector(selector);
       button.style.backgroundColor = "#99badd";
-      await delay(300);
+      await delay(settings.delay);
       button.style.backgroundColor = "#FFFFFF";
     };
     // make it look like the player is selecting the object
@@ -420,13 +412,10 @@ export class GameScene extends Phaser.Scene {
       this.selectionIndicator.isoX = obj.isoX;
       this.selectionIndicator.isoY = obj.isoY;
       this.selectionIndicator.visible = true;
-      if (settings.mode == "one") {
-        await this.waitForInput();
-      } else {
-        await delay(300);
-      }
+      await delay(settings.delay);
       await simulateClick("button#select");
       this.selectionIndicator.visible = false;
+      this.updateRoomDescription();
     };
     // return the exit that is on the path
     const firstExitOnPath = (exits, path) => {
@@ -478,17 +467,13 @@ export class GameScene extends Phaser.Scene {
       }
     }
   }
-  
-  handleOneSwitch(){
-    if (this.oneSwitchHandler) {
+
+  selectNext() {
+    if(this.oneSwitchHandler){
       this.oneSwitchHandler();
       this.oneSwitchHandler = null;
       return;
-    }
-  }
-
-  selectNext() {
-    this.handleOneSwitch();
+    } 
     const targets = this.getTargets();
     this.targetIndex += 1;
     this.target = targets[this.targetIndex % targets.length];
@@ -499,12 +484,19 @@ export class GameScene extends Phaser.Scene {
   }
 
   async makeChoice() {
-    this.handleOneSwitch();
+    if(this.oneSwitchHandler){
+      console.log("one switch");
+      this.oneSwitchHandler();
+      this.oneSwitchHandler = null;
+      return;
+    } 
     if (this.target) {
+      console.log("target");
       this.targetIndex = -1;
       this.selectionIndicator.visible = false;
       await this.visitChoice(this.target);
       this.target = null;
+      this.updateRoomDescription();
     }
   }
 
@@ -589,4 +581,6 @@ export class GameScene extends Phaser.Scene {
     }
     return positions;
   }
+
+
 }
