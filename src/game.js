@@ -65,6 +65,8 @@ export class GameScene extends Phaser.Scene {
       "Rock_2",
       "over_grass_flower1"
     ];
+
+    this.load.audio("click", "assets/audio/click.mp3");
   }
 
   create() {
@@ -136,12 +138,13 @@ export class GameScene extends Phaser.Scene {
         Rock_2: -1 / 2
       };
       let audio = {
-        Chest1_closed: 0,
-        Chest2_opened: 0,
-        fountain: 0,
-        over_grass_flower1: -1 / 2,
-        Rock_1: -1 / 2,
-        Rock_2: -1 / 2
+        Chest1_closed: "click",
+        Chest2_opened: "click",
+        fountain: "click",
+        over_grass_flower1: "click",
+        Rock_1: "click",
+        Rock_2: "click",
+        door: "click"
       }
       let positions = this.generateObjectPositions(room);
       positions = positions.filter(([px, py]) => px != ix || py != iy);
@@ -355,16 +358,16 @@ export class GameScene extends Phaser.Scene {
         tweens: tweens,
         onComplete: () => {
           if (this.selectionIndicator.audio != null) {
+            console.log(this.selectionIndicator.audio);
             let music = this.sound.add(this.selectionIndicator.audio);
             music.play();
+          } else {
+          let music = this.sound.add("click");
+          music.play();
           }
           this.player.anims.stop();
           resolve();
-          /*
-          document.getElementById(
-            "information_box"
-          ).innerHTML = this.room.getDescription();
-          */
+          this.updateRoomDescription();
         }
       });
     });
