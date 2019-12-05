@@ -351,10 +351,10 @@ export class GameScene extends Phaser.Scene {
       button.style.backgroundColor = "#FFFFFF";
     };
     // make it look like the player is selecting the object
-    const simulateSelect = async obj => {
+    const simulateSelect = async target => {
       await simulateClick("button#next");
-      this.selectionIndicator.isoX = obj.isoX;
-      this.selectionIndicator.isoY = obj.isoY;
+      this.selectionIndicator.isoX = target.x;
+      this.selectionIndicator.isoY = target.y;
       this.selectionIndicator.visible = true;
       if (settings.mode == "one") {
         await this.waitForInput();
@@ -392,7 +392,7 @@ export class GameScene extends Phaser.Scene {
         const exit = firstExitOnPath(exits, path);
         // if we found it go there
         if (exit) {
-          await simulateSelect(exit.object);
+          await simulateSelect(exit);
           await this.visitChoice(exit);
         } else {
           // if we didn't something is really wrong
@@ -412,7 +412,7 @@ export class GameScene extends Phaser.Scene {
             targetsToVisit.push(target);
           }
         } else {
-          await simulateSelect(target.object);
+          await simulateSelect(target);
           await this.visitChoice(target);
         }
       }
@@ -476,9 +476,7 @@ export class GameScene extends Phaser.Scene {
     let exits = this.room.exits.map(exit => {
       let { x, y } = exit;
       // console.log("exit", x, y);
-      const tiles = this.tiles.filter(t => t.isoX == x && t.isoY == y);
       return {
-        object: tiles[0],
         exit,
         x,
         y
