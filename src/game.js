@@ -488,6 +488,13 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  playSound(sound){
+    if(settings.sound){
+      let music = this.sound.add(sound);
+      music.play();
+    }
+  }
+
   async visitChoice(target) {
     if ("exit" in target) {
       let { x, y, nextroom, stepIn } = target.exit;
@@ -502,8 +509,7 @@ export class GameScene extends Phaser.Scene {
       // it is now the current room
       this.room = nextroom;
       this.updateRoomDescription();
-      let music = this.sound.add("click");
-      music.play();
+      this.playSound("click");
     } else {
       // allow the object to provide the destination
       let { x, y, z } = target.object.position();
@@ -518,8 +524,7 @@ export class GameScene extends Phaser.Scene {
       if (!keep) {
         this.map.removeObject(target.object, x, y);
         this.updateRoomDescription();
-        let music = this.sound.add(target.object.audio);
-        music.play();
+        this.playSound(target.object.audio);
         target.object.destroy();
       }
       this.score++;
