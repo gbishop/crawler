@@ -126,14 +126,14 @@ export class GameScene extends Phaser.Scene {
         Rock_1: "thump",
         Rock_2: "thump"
       }
-      // let durations = {
-      //   Chest1_closed: 0,
-      //   Chest2_opened: 0,
-      //   fountain: 5000,
-      //   over_grass_flower1: 0,
-      //   Rock_1: 0,
-      //   Rock_2: 0
-      // };
+      let prettyNames = {
+        Chest1_closed: "a red chest",
+        Chest2_opened: "an open green chest",
+        fountain: "a flowing fountain",
+        over_grass_flower1: "a pretty flower",
+        Rock_1: "a rock",
+        Rock_2: "a rock"
+      };
       let positions = this.generateObjectPositions(room);
       // remove the player position
       positions = positions.filter(([px, py]) => px != ix || py != iy);
@@ -153,7 +153,7 @@ export class GameScene extends Phaser.Scene {
           z: heights[o],
           texture: o,
           group: this.isoGroup,
-          description: o,
+          description: prettyNames[o],
           reward: 1,
           room: room,
           audio: audio[o]
@@ -257,10 +257,12 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
+    this.updateRoomDescription();
+
     if (settings.mode != "full") {
+      document.getElementById("information_box").innerHTML = "press any key to start sound!";
       this.autoPlay();
     }
-    this.updateRoomDescription();
   }
 
   updateRoomDescription(){
@@ -276,8 +278,10 @@ export class GameScene extends Phaser.Scene {
     this.room.objects.forEach(o => {
       if(index == this.room.objects.length-1 && this.room.objects.length > 1){
         description += " and ";
-      }
-      description += o.getDescription();
+      } else if(index < this.room.objects.length -1 && this.room.objects.length > 2 && index > 0){
+        description += ", ";
+      } 
+        description += o.getDescription();
       index++;
     });
     return description;

@@ -1,5 +1,5 @@
 import IsoSprite from "./phaser3-plugin-isometric/IsoSprite.js";
-let vowels = ['a', 'e', 'i', 'o', 'u'];
+
 export default class EnhancedIsoSprite extends IsoSprite {
   constructor(config) {
     super(
@@ -50,6 +50,6 @@ export default class EnhancedIsoSprite extends IsoSprite {
   }
 
   getDescription(){
-    return vowels.indexOf(this.description.charAt(0)) > -1 ? "an "+this.description.toLowerCase() : "a "+this.description.toLowerCase();
+    return this.description;
    }
 }
