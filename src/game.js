@@ -489,7 +489,12 @@ export class GameScene extends Phaser.Scene {
     const targets = this.getTargets();
     this.targetIndex += 1;
     this.target = targets[this.targetIndex % targets.length];
-    this.speak("You've chosen "+this.target.object.description);
+    if(this.target.object.description){
+      this.speak("You've selected "+this.target.object.description);
+    } else {
+      this.speak("go to the next room");
+    }
+    
     this.selectionIndicator.visible = true;
     this.selectionIndicator.isoX = this.target.object.isoX;
     this.selectionIndicator.isoY = this.target.object.isoY;
