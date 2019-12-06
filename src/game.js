@@ -30,7 +30,7 @@ export class GameScene extends Phaser.Scene {
     this.canvas = document.querySelector("canvas");
     this.score = 0;
     this.targetIndex = -1;
-
+    this.speaker = window.speechSynthesis;
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
@@ -213,10 +213,6 @@ export class GameScene extends Phaser.Scene {
 
     this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
 
-    // control sound
-    if (settings.sound) {
-    }
-
     // configure the camera
     // I'm making the camera follow the selection box and it follows the
     // player when the player moves. I'm using this hack to keep the selection
@@ -260,13 +256,31 @@ export class GameScene extends Phaser.Scene {
     this.updateRoomDescription();
 
     if (settings.mode != "full") {
-      document.getElementById("information_box").innerHTML = "press any key to start sound!";
+      this.setRoomInfo("press any key to start sound!");
       this.autoPlay();
+    }
+    this.speak();
+  }
+
+  speak(){
+    if (settings.sound && settings.dictation) {
+      this.utterThis = new SpeechSynthesisUtterance(this.getRoomInfo());
+      this.utterThis.voice = this.speaker.getVoices()[0];
+      this.speaker.speak(this.utterThis);
     }
   }
 
+  setRoomInfo(text){
+    document.getElementById("information_box").innerHTML= "";
+    document.getElementById("information_box").innerHTML= text;
+  }
+
+  getRoomInfo(){
+    return document.getElementById("information_box").innerHTML;
+  }
+
   updateRoomDescription(){
-    document.getElementById("information_box").innerHTML = this.getRoomDescription();
+    this.setRoomInfo(this.getRoomDescription());
   }
 
   getRoomDescription(){
@@ -513,6 +527,7 @@ export class GameScene extends Phaser.Scene {
       // it is now the current room
       this.room = nextroom;
       this.updateRoomDescription();
+      this.speak();
       this.playSound("click");
     } else {
       // allow the object to provide the destination
