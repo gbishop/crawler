@@ -55,12 +55,18 @@ window.onload = () => {
   const soundInput = getInput("#sound");
   soundInput.checked = settings.sound;
 
+  const speedInput = getInput("#speed");
+
+  const dictationInput = getInput("#roomDictation");
+
   document.getElementById("settings").addEventListener("change", e => {
     console.log("change");
     const modeInput = getInput("input[name=mode]:checked");
     const mode = modeInput.value;
     settings.mode = mode;
     settings.sound = soundInput.checked;
+    settings.speed = Number(speedInput.value);
+    settings.dictation = dictationInput.checked;
     settings.persist();
   });
 };
