@@ -259,12 +259,12 @@ export class GameScene extends Phaser.Scene {
       this.setRoomInfo("press any key to start sound!");
       this.autoPlay();
     }
-    this.speak();
+    this.speak(this.getRoomDescription());
   }
 
-  speak(){
+  speak(text){
     if (settings.sound && settings.dictation) {
-      this.utterThis = new SpeechSynthesisUtterance(this.getRoomInfo());
+      this.utterThis = new SpeechSynthesisUtterance(text);
       this.utterThis.voice = this.speaker.getVoices()[0];
       this.speaker.speak(this.utterThis);
     }
@@ -489,6 +489,7 @@ export class GameScene extends Phaser.Scene {
     const targets = this.getTargets();
     this.targetIndex += 1;
     this.target = targets[this.targetIndex % targets.length];
+    this.speak("You've chosen "+this.target.object.description);
     this.selectionIndicator.visible = true;
     this.selectionIndicator.isoX = this.target.object.isoX;
     this.selectionIndicator.isoY = this.target.object.isoY;
@@ -527,7 +528,7 @@ export class GameScene extends Phaser.Scene {
       // it is now the current room
       this.room = nextroom;
       this.updateRoomDescription();
-      this.speak();
+      this.speak(this.getRoomDescription());
       this.playSound("click");
     } else {
       // allow the object to provide the destination
@@ -543,6 +544,7 @@ export class GameScene extends Phaser.Scene {
       if (!keep) {
         this.map.removeObject(target.object, x, y);
         this.updateRoomDescription();
+        this.speak("You've chosen "+target.object.description);
         this.playSound(target.object.audio);
         target.object.destroy();
       }
