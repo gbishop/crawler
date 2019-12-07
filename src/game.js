@@ -56,6 +56,8 @@ export class GameScene extends Phaser.Scene {
     this.load.image("Rock_2", "assets/Rock_2.png");
     this.load.image("over_grass_flower1", "assets/over_grass_flower1.png");
 
+    this.load.image("particle", "assets/animations/particle.png");
+
     this.RandomlyPlacedObjects = [
       "Chest1_closed",
       "Chest2_opened",
@@ -75,10 +77,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.isoGroup = this.add.group();
-    // @ts-ignore
-    // isometric projection
-    // this.iso.projector.projectionAngle = Math.PI / 6; // 30 degrees
-
+  
     this.map = new Map({
       size: [100, 100],
       seed: "Abcd", //omit for generated seed
@@ -103,6 +102,19 @@ export class GameScene extends Phaser.Scene {
       room_count: 10
     });
     let { x: ix, y: iy } = this.map.initial_position;
+
+    this.particles = this.add.particles("particle");
+    this.emitter = this.particles.createEmitter({
+      angle: { min: 0, max: 360 },
+      speed: { min: 50, max: 200 },
+      quantity: { min: 40, max: 50 },
+      lifespan: { min: 200, max: 500 },
+      alpha: { start: 1, end: 0 },
+      scale: { min: 0.5, max: 0.5 },
+      rotate: { start: 0, end: 360 },
+      x: 200,
+      y: 200
+    });
 
     this.room = this.map.initial_room;
 
@@ -273,6 +285,9 @@ export class GameScene extends Phaser.Scene {
   setRoomInfo(text){
     document.getElementById("information_box").innerHTML= "";
     document.getElementById("information_box").innerHTML= text;
+    // if(text == "This room is empty! Go explore others."){
+    //   this.speak();
+    // }
   }
 
   getRoomInfo(){
@@ -551,6 +566,7 @@ export class GameScene extends Phaser.Scene {
         this.updateRoomDescription();
         this.speak("You've chosen "+target.object.description);
         this.playSound(target.object.audio);
+        this.particles.emitParticleAt(x,y);
         target.object.destroy();
       }
       this.score++;
