@@ -112,8 +112,7 @@ export class GameScene extends Phaser.Scene {
       alpha: { start: 1, end: 0 },
       scale: { min: 0.5, max: 0.5 },
       rotate: { start: 0, end: 360 },
-      x: 200,
-      y: 200
+      on: false
     });
 
     this.room = this.map.initial_room;
