@@ -1,4 +1,3 @@
-
 /** @typedef {import('phaser')} Phaser */
 import settings from "./settings.js";
 import { Map } from "./map.js";
@@ -77,7 +76,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.isoGroup = this.add.group();
-  
+
     this.map = new Map({
       size: [100, 100],
       seed: "Abcd", //omit for generated seed
@@ -103,18 +102,6 @@ export class GameScene extends Phaser.Scene {
     });
     let { x: ix, y: iy } = this.map.initial_position;
 
-    this.particles = this.add.particles("particle");
-    this.emitter = this.particles.createEmitter({
-      angle: { min: 0, max: 360 },
-      speed: { min: 50, max: 200 },
-      quantity: { min: 40, max: 50 },
-      lifespan: { min: 200, max: 500 },
-      alpha: { start: 1, end: 0 },
-      scale: { min: 0.5, max: 0.5 },
-      rotate: { start: 0, end: 360 },
-      on: false
-    });
-
     this.room = this.map.initial_room;
 
     this.tiles = [];
@@ -136,7 +123,7 @@ export class GameScene extends Phaser.Scene {
         over_grass_flower1: "ding",
         Rock_1: "thump",
         Rock_2: "thump"
-      }
+      };
       let prettyNames = {
         Chest1_closed: "a red chest",
         Chest2_opened: "an open green chest",
@@ -222,6 +209,20 @@ export class GameScene extends Phaser.Scene {
     this.selectionIndicator.scale =
       Math.sqrt(3) / this.selectionIndicator.width;
 
+    // put these last so the come out on top
+    this.particles = this.add.particles("particle");
+    this.emitter = this.particles.createEmitter({
+      angle: { min: 0, max: 360 },
+      speed: { min: 0.5, max: 40.0 },
+      quantity: { min: 40, max: 400 },
+      lifespan: { min: 200, max: 500 },
+      alpha: { start: 1, end: 0 },
+      scale: 0.05,
+      rotate: { start: 0, end: 360 },
+      on: false
+    });
+    this.particles.depth = 100;
+
     this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
 
     // configure the camera
@@ -273,7 +274,7 @@ export class GameScene extends Phaser.Scene {
     this.speak(this.getRoomDescription());
   }
 
-  speak(text){
+  speak(text) {
     if (settings.sound && settings.dictation) {
       this.utterThis = new SpeechSynthesisUtterance(text);
       this.utterThis.voice = this.speaker.getVoices()[0];
@@ -281,35 +282,42 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  setRoomInfo(text){
-    document.getElementById("information_box").innerHTML= "";
-    document.getElementById("information_box").innerHTML= text;
+  setRoomInfo(text) {
+    document.getElementById("information_box").innerHTML = "";
+    document.getElementById("information_box").innerHTML = text;
     // if(text == "This room is empty! Go explore others."){
     //   this.speak();
     // }
   }
 
-  getRoomInfo(){
+  getRoomInfo() {
     return document.getElementById("information_box").innerHTML;
   }
 
-  updateRoomDescription(){
+  updateRoomDescription() {
     this.setRoomInfo(this.getRoomDescription());
   }
 
-  getRoomDescription(){
-    if(this.room.objects.length == 0){
-      return "This room is empty! Go explore others."
+  getRoomDescription() {
+    if (this.room.objects.length == 0) {
+      return "This room is empty! Go explore others.";
     }
     let description = "You've found ";
     let index = 0;
     this.room.objects.forEach(o => {
-      if(index == this.room.objects.length-1 && this.room.objects.length > 1){
+      if (
+        index == this.room.objects.length - 1 &&
+        this.room.objects.length > 1
+      ) {
         description += " and ";
-      } else if(index < this.room.objects.length -1 && this.room.objects.length > 2 && index > 0){
+      } else if (
+        index < this.room.objects.length - 1 &&
+        this.room.objects.length > 2 &&
+        index > 0
+      ) {
         description += ", ";
-      } 
-        description += o.getDescription();
+      }
+      description += o.getDescription();
       index++;
     });
     return description;
@@ -376,19 +384,19 @@ export class GameScene extends Phaser.Scene {
       this.inputEnabled = true;
     });
   }
-  
-   // show the button we are clicking
-   async simulateClick(selector) {
+
+  // show the button we are clicking
+  async simulateClick(selector) {
     const button = document.querySelector(selector);
     button.style.backgroundColor = "#99badd";
     await this.delay(settings.speed);
     button.style.backgroundColor = "#FFFFFF";
-  };
+  }
 
-    // wait for milliseconds to elapse
+  // wait for milliseconds to elapse
   async delay(t) {
     return new Promise((resolve, reject) =>
-    this.time.delayedCall(t, resolve, null, null)
+      this.time.delayedCall(t, resolve, null, null)
     );
   }
 
@@ -404,7 +412,7 @@ export class GameScene extends Phaser.Scene {
     // list of places yet to visit
     // I'm faking up the initial one to get things started
     // later ones will be targets as returned by getTargets
-    
+
     const targetsToVisit = [
       {
         x: this.player.isoX,
@@ -416,7 +424,6 @@ export class GameScene extends Phaser.Scene {
     // keep track of rooms visited so we don't get into loops
     const roomsVisited = [];
     // I'm making these helps internal, they could be methods
-
 
     // make it look like the player is selecting the object
     const simulateSelect = async obj => {
@@ -488,8 +495,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
   }
-  
-  handleOneSwitch(){
+
+  handleOneSwitch() {
     if (this.oneSwitchHandler) {
       this.oneSwitchHandler();
       this.oneSwitchHandler = null;
@@ -503,12 +510,12 @@ export class GameScene extends Phaser.Scene {
     const targets = this.getTargets();
     this.targetIndex += 1;
     this.target = targets[this.targetIndex % targets.length];
-    if(this.target.object.description){
-      this.speak("You've selected "+this.target.object.description);
+    if (this.target.object.description) {
+      this.speak("You've selected " + this.target.object.description);
     } else {
       this.speak("go to the next room");
     }
-    
+
     this.selectionIndicator.visible = true;
     this.selectionIndicator.isoX = this.target.object.isoX;
     this.selectionIndicator.isoY = this.target.object.isoY;
@@ -526,8 +533,8 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  playSound(sound){
-    if(settings.sound){
+  playSound(sound) {
+    if (settings.sound) {
       let music = this.sound.add(sound);
       music.play();
     }
@@ -561,11 +568,14 @@ export class GameScene extends Phaser.Scene {
       // interact with the object
       let keep = await target.object.interact(this.player, this.room);
       if (!keep) {
+        console.log("emit", x, y, target);
+        this.particles.emitParticleAt(target.object.x, target.object.y);
+        console.log("emitter", this.emitter);
+        console.log("particles", this.particles);
         this.map.removeObject(target.object, x, y);
         this.updateRoomDescription();
-        this.speak("You've chosen "+target.object.description);
+        this.speak("You've chosen " + target.object.description);
         this.playSound(target.object.audio);
-        this.particles.emitParticleAt(x,y);
         target.object.destroy();
       }
       this.score++;
