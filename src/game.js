@@ -79,7 +79,6 @@ export class GameScene extends Phaser.Scene {
 
     this.map = new Map({
       size: [100, 100],
-      seed: "Abcd", //omit for generated seed
       rooms: {
         initial: {
           min_size: [4, 4],
