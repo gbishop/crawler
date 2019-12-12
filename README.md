@@ -2,7 +2,7 @@
 
 A simple accessible dungeon crawler game
 
-https://gbishop.github.io/crawler
+https://meganrogge.github.io/crawler-1
 
 ```
 git clone
