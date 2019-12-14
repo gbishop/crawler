@@ -1,8 +1,15 @@
 /* an abstraction over dungeon-generated and easystar for a game */
 import Dungeon from "./dungeon-generator/generators/dungeon.js";
 import EasyStar from "./easystar/easystar.js";
+import EnhancedIsoSprite from "./EnhancedIsoSprite.js";
 
 export class Exit {
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @param {Room} nextroom
+   * @param {{ x: number; y: number; }} stepIn
+   */
   constructor(x, y, nextroom, stepIn) {
     this.x = x;
     this.y = y;
@@ -12,16 +19,22 @@ export class Exit {
 }
 
 export class Room {
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @param {number} w
+   * @param {number} h
+   */
   constructor(x, y, w, h) {
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
+    /** @type {EnhancedIsoSprite[]} */
     this.objects = [];
+    /** @type {Exit[]} */
     this.exits = [];
   }
-
-  addObject(object) {}
 }
 
 export class Map {
@@ -76,6 +89,10 @@ export class Map {
   }
 
   // return the room that contains location x, y
+  /**
+   * @param {number} x
+   * @param {number} y
+   */
   roomFromXY(x, y) {
     for (const room of this.rooms) {
       if (
@@ -90,12 +107,22 @@ export class Map {
     console.log("room not found", x, y, this.rooms);
   }
 
+  /**
+   * @param {EnhancedIsoSprite} object
+   * @param {number} x
+   * @param {number} y
+   */
   addObject(object, x, y) {
     const room = this.roomFromXY(x, y);
     room.objects.push(object);
     this.finder.setAdditionalPointCost(x, y, 1000);
   }
 
+  /**
+   * @param {EnhancedIsoSprite} object
+   * @param {number} x
+   * @param {number} y
+   */
   removeObject(object, x, y) {
     const room = this.roomFromXY(x, y);
     const ndx = room.objects.indexOf(object);
@@ -107,14 +134,26 @@ export class Map {
     this.finder.setAdditionalPointCost(x, y, 0);
   }
 
+  /**
+   * @param {number} x
+   * @param {number} y
+   */
   walkable(x, y) {
     return !this.dungeon.walls.get([x, y]);
   }
 
   // this is async
+  /**
+   * @param {number} fromX
+   * @param {number} fromY
+   * @param {number} toX
+   * @param {number} toY
+   */
   path(fromX, fromY, toX, toY) {
-    return new Promise((resolve, reject) => {
-      this.finder.findPath(fromX, fromY, toX, toY, path => {
+    return new Promise((resolve, _reject) => {
+      this.finder.findPath(fromX, fromY, toX, toY, (
+        /** @type {{x: number, y: number}[]} */ path
+      ) => {
         resolve(path || []);
       });
       this.finder.calculate();
