@@ -10,6 +10,8 @@ export default class EnhancedIsoSprite extends IsoSprite {
       config.texture,
       config.frame || 0
     );
+    this.audio = config.audio;
+    this.description = config.description;
     this.room = config.room;
     this.config = config;
     config.scene.add.existing(this);
@@ -46,4 +48,8 @@ export default class EnhancedIsoSprite extends IsoSprite {
     this.visible = false;
     return false; // false to remove, true to keep
   }
+
+  getDescription(){
+    return this.description;
+   }
 }

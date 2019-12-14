@@ -5,13 +5,17 @@ class Settings {
   constructor() {
     this.mode = "auto";
     this.sound = true;
+    this.speed = 300;
+    this.dictation = false;
   }
 
   persist() {
     const data = {
       version: version,
       mode: this.mode,
-      sound: this.sound
+      sound: this.sound,
+      speed: this.speed,
+      dictation: this.dictation
     };
     const json = JSON.stringify(data);
     localStorage.setItem(key, json);
@@ -24,6 +28,8 @@ class Settings {
       if (data.version == version) {
         this.mode = data.mode;
         this.sound = data.sound;
+        this.speed = data.speed;
+        this.dictation = data.dictation;
       }
     }
   }

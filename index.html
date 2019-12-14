@@ -10,7 +10,7 @@
     <div id="play" class="row">
       <button id="setup" title="settings"><img src="assets/gear.png" /></button>
       <button id="select" class="col choice">Select</button>
-      <div id="game" class="col"></div>
+      <div id="game" class="col"><span id="information_box"></span></div>
       <button id="next" class="col choice">Next</button>
     </div>
     <div id="settings">
@@ -38,7 +38,11 @@
           ><b>Full play mode</b> has the player making the choices.</label
         >
       </div>
-
+      <div>
+        <label for="delay">Game speed: Fastest</label>
+        <input type="range" min="300" max="2000" value="600" class="slider" id="speed">
+        Slowest
+      </div>
       <p>
         More info.
       </p>
@@ -46,12 +50,13 @@
       <div>
         <input type="checkbox" id="sound" />
         <label for="sound">Enable sound</label>
+        <input type="checkbox" id="roomDictation" />
+        <label for="roomDictation">Enable room description dictation</label>
       </div>
 
       <p>
         Use the gear icon in the upper right to come back here from the game
       </p>
-
       <button id="playButton">Play</button>
     </div>
   </body>

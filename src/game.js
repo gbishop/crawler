@@ -29,7 +29,7 @@ export class GameScene extends Phaser.Scene {
     this.canvas = document.querySelector("canvas");
     this.score = 0;
     this.targetIndex = -1;
-
+    this.speaker = window.speechSynthesis;
     // cast this once so I don't have to below
     // shouldn't I be able to just assert this?
     this.sound = /** @type {Phaser.Sound.WebAudioSoundManager} */ (super.sound);
@@ -55,6 +55,8 @@ export class GameScene extends Phaser.Scene {
     this.load.image("Rock_2", "assets/Rock_2.png");
     this.load.image("over_grass_flower1", "assets/over_grass_flower1.png");
 
+    this.load.image("particle", "assets/animations/particle.png");
+
     this.RandomlyPlacedObjects = [
       "Chest1_closed",
       "Chest2_opened",
@@ -63,17 +65,20 @@ export class GameScene extends Phaser.Scene {
       "Rock_2",
       "over_grass_flower1"
     ];
+
+    this.load.audio("click", "assets/audio/click.mp3");
+    this.load.audio("ding", "assets/audio/ding.mp3");
+    this.load.audio("doorClose", "assets/audio/doorClose.mp3");
+    this.load.audio("knock", "assets/audio/knock.mp3");
+    this.load.audio("thump", "assets/audio/thump.mp3");
+    this.load.audio("waterfall", "assets/audio/waterfall.mp3");
   }
 
   create() {
     this.isoGroup = this.add.group();
-    // @ts-ignore
-    // isometric projection
-    // this.iso.projector.projectionAngle = Math.PI / 6; // 30 degrees
 
     this.map = new Map({
       size: [100, 100],
-      seed: "Abcd", //omit for generated seed
       rooms: {
         initial: {
           min_size: [4, 4],
@@ -92,7 +97,7 @@ export class GameScene extends Phaser.Scene {
       symmetric_rooms: false, // exits must be in the center of a wall if true
       interconnects: 0, //extra corridors to connect rooms and make circular paths. not 100% guaranteed
       max_interconnect_length: 10,
-      room_count: 40
+      room_count: 10
     });
     let { x: ix, y: iy } = this.map.initial_position;
 
@@ -109,6 +114,22 @@ export class GameScene extends Phaser.Scene {
         over_grass_flower1: -1 / 2,
         Rock_1: -1 / 2,
         Rock_2: -1 / 2
+      };
+      let audio = {
+        Chest1_closed: "knock",
+        Chest2_opened: "doorClose",
+        fountain: "waterfall",
+        over_grass_flower1: "ding",
+        Rock_1: "thump",
+        Rock_2: "thump"
+      };
+      let prettyNames = {
+        Chest1_closed: "a red chest",
+        Chest2_opened: "an open green chest",
+        fountain: "a flowing fountain",
+        over_grass_flower1: "a pretty flower",
+        Rock_1: "a rock",
+        Rock_2: "a rock"
       };
       let positions = this.generateObjectPositions(room);
       // remove the player position
@@ -129,9 +150,10 @@ export class GameScene extends Phaser.Scene {
           z: heights[o],
           texture: o,
           group: this.isoGroup,
-          description: o,
+          description: prettyNames[o],
           reward: 1,
-          room: room
+          room: room,
+          audio: audio[o]
         });
         isoObj.scale = Math.sqrt(3) / isoObj.width;
         this.map.addObject(isoObj, ox, oy);
@@ -186,11 +208,21 @@ export class GameScene extends Phaser.Scene {
     this.selectionIndicator.scale =
       Math.sqrt(3) / this.selectionIndicator.width;
 
-    this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
+    // put these last so the come out on top
+    this.particles = this.add.particles("particle");
+    this.emitter = this.particles.createEmitter({
+      angle: { min: 0, max: 360 },
+      speed: { min: 0.5, max: 40.0 },
+      quantity: { min: 40, max: 400 },
+      lifespan: { min: 200, max: 500 },
+      alpha: { start: 1, end: 0 },
+      scale: 0.05,
+      rotate: { start: 0, end: 360 },
+      on: false
+    });
+    this.particles.depth = 100;
 
-    // control sound
-    if (settings.sound) {
-    }
+    this.scoreDisplay = this.add.text(20, 20, "0", { fontSize: 20 });
 
     // configure the camera
     // I'm making the camera follow the selection box and it follows the
@@ -232,18 +264,65 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
+    this.updateRoomDescription();
+
     if (settings.mode != "full") {
+      this.setRoomInfo("press any key to start sound!");
       this.autoPlay();
     }
-    /*
-    document.getElementById(
-      "information_box"
-    ).innerHTML = this.room.getDescription();
-    */
+    this.speak(this.getRoomDescription());
+  }
+
+  speak(text) {
+    if (settings.sound && settings.dictation) {
+      this.utterThis = new SpeechSynthesisUtterance(text);
+      this.utterThis.voice = this.speaker.getVoices()[0];
+      this.speaker.speak(this.utterThis);
+    }
+  }
+
+  setRoomInfo(text) {
+    document.getElementById("information_box").innerHTML = "";
+    document.getElementById("information_box").innerHTML = text;
+    // if(text == "This room is empty! Go explore others."){
+    //   this.speak();
+    // }
+  }
+
+  getRoomInfo() {
+    return document.getElementById("information_box").innerHTML;
+  }
+
+  updateRoomDescription() {
+    this.setRoomInfo(this.getRoomDescription());
+  }
+
+  getRoomDescription() {
+    if (this.room.objects.length == 0) {
+      return "This room is empty! Go explore others.";
+    }
+    let description = "You've found ";
+    let index = 0;
+    this.room.objects.forEach(o => {
+      if (
+        index == this.room.objects.length - 1 &&
+        this.room.objects.length > 1
+      ) {
+        description += " and ";
+      } else if (
+        index < this.room.objects.length - 1 &&
+        this.room.objects.length > 2 &&
+        index > 0
+      ) {
+        description += ", ";
+      }
+      description += o.getDescription();
+      index++;
+    });
+    return description;
   }
 
   lighting() {
-    return;
     this.isoGroup.getChildren().forEach(go => {
       const tile = /** @type{IsoSprite} */ (go);
       if (tile === this.selectionIndicator) return;
@@ -290,17 +369,8 @@ export class GameScene extends Phaser.Scene {
       this.tweens.timeline({
         tweens: tweens,
         onComplete: () => {
-          if (this.selectionIndicator.audio != null) {
-            let music = this.sound.add(this.selectionIndicator.audio);
-            music.play();
-          }
           this.player.anims.stop();
           resolve();
-          /*
-          document.getElementById(
-            "information_box"
-          ).innerHTML = this.room.getDescription();
-          */
         }
       });
     });
@@ -312,6 +382,21 @@ export class GameScene extends Phaser.Scene {
       this.oneSwitchHandler = resolve;
       this.inputEnabled = true;
     });
+  }
+
+  // show the button we are clicking
+  async simulateClick(selector) {
+    const button = document.querySelector(selector);
+    button.style.backgroundColor = "#99badd";
+    await this.delay(settings.speed);
+    button.style.backgroundColor = "#FFFFFF";
+  }
+
+  // wait for milliseconds to elapse
+  async delay(t) {
+    return new Promise((resolve, reject) =>
+      this.time.delayedCall(t, resolve, null, null)
+    );
   }
 
   // The loop pulls off the top room to visit.
@@ -326,6 +411,7 @@ export class GameScene extends Phaser.Scene {
     // list of places yet to visit
     // I'm faking up the initial one to get things started
     // later ones will be targets as returned by getTargets
+
     const targetsToVisit = [
       {
         x: this.player.isoX,
@@ -338,30 +424,19 @@ export class GameScene extends Phaser.Scene {
     const roomsVisited = [];
     // I'm making these helps internal, they could be methods
 
-    // wait for milliseconds to elapse
-    const delay = async t =>
-      new Promise((resolve, reject) =>
-        this.time.delayedCall(t, resolve, null, null)
-      );
-    // show the button we are clicking
-    const simulateClick = async selector => {
-      const button = document.querySelector(selector);
-      button.style.backgroundColor = "#99badd";
-      await delay(300);
-      button.style.backgroundColor = "#FFFFFF";
-    };
     // make it look like the player is selecting the object
     const simulateSelect = async target => {
-      await simulateClick("button#next");
+      await this.simulateClick("button#next");
       this.selectionIndicator.isoX = target.x;
       this.selectionIndicator.isoY = target.y;
       this.selectionIndicator.visible = true;
       if (settings.mode == "one") {
         await this.waitForInput();
       } else {
-        await delay(300);
+        await this.delay(settings.speed);
       }
-      await simulateClick("button#select");
+      await this.simulateClick("button#select");
+      this.updateRoomDescription();
       this.selectionIndicator.visible = false;
     };
     // return the exit that is on the path
@@ -394,6 +469,7 @@ export class GameScene extends Phaser.Scene {
         if (exit) {
           await simulateSelect(exit);
           await this.visitChoice(exit);
+          this.updateRoomDescription();
         } else {
           // if we didn't something is really wrong
           console.log("no exit");
@@ -419,17 +495,47 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  async makeChoice() {
+  handleOneSwitch() {
     if (this.oneSwitchHandler) {
       this.oneSwitchHandler();
       this.oneSwitchHandler = null;
       return;
     }
+  }
+
+  selectNext() {
+    this.simulateClick("#next");
+    this.handleOneSwitch();
+    const targets = this.getTargets();
+    this.targetIndex += 1;
+    this.target = targets[this.targetIndex % targets.length];
+    if (this.target.object.description) {
+      this.speak("You've selected " + this.target.object.description);
+    } else {
+      this.speak("go to the next room");
+    }
+
+    this.selectionIndicator.visible = true;
+    this.selectionIndicator.isoX = this.target.object.isoX;
+    this.selectionIndicator.isoY = this.target.object.isoY;
+    this.selectionIndicator._project();
+  }
+
+  async makeChoice() {
+    this.simulateClick("#select");
+    this.handleOneSwitch();
     if (this.target) {
       this.targetIndex = -1;
       this.selectionIndicator.visible = false;
       await this.visitChoice(this.target);
       this.target = null;
+    }
+  }
+
+  playSound(sound) {
+    if (settings.sound) {
+      let music = this.sound.add(sound);
+      music.play();
     }
   }
 
@@ -446,6 +552,9 @@ export class GameScene extends Phaser.Scene {
       await this.moveCharacter(path);
       // it is now the current room
       this.room = nextroom;
+      this.updateRoomDescription();
+      this.speak(this.getRoomDescription());
+      this.playSound("click");
     } else {
       // allow the object to provide the destination
       let { x, y, z } = target.object.position();
@@ -458,7 +567,14 @@ export class GameScene extends Phaser.Scene {
       // interact with the object
       let keep = await target.object.interact(this.player, this.room);
       if (!keep) {
+        console.log("emit", x, y, target);
+        this.particles.emitParticleAt(target.object.x, target.object.y);
+        console.log("emitter", this.emitter);
+        console.log("particles", this.particles);
         this.map.removeObject(target.object, x, y);
+        this.updateRoomDescription();
+        this.speak("You've chosen " + target.object.description);
+        this.playSound(target.object.audio);
         target.object.destroy();
       }
       this.score++;
@@ -475,7 +591,6 @@ export class GameScene extends Phaser.Scene {
     sortByDistance(targets, px, py);
     let exits = this.room.exits.map(exit => {
       let { x, y } = exit;
-      // console.log("exit", x, y);
       return {
         exit,
         x,
@@ -487,29 +602,9 @@ export class GameScene extends Phaser.Scene {
     return targets;
   }
 
-  selectNext() {
-    if (this.oneSwitchHandler) {
-      this.oneSwitchHandler();
-      this.oneSwitchHandler = null;
-      return;
-    }
-    const targets = this.getTargets();
-    // choose one based on the index
-    this.targetIndex += 1;
-    this.target = targets[this.targetIndex % targets.length];
-    this.tweens.add({
-      targets: this.selectionIndicator,
-      isoX: this.target.x,
-      isoY: this.target.y,
-      duration: 100,
-      onComplete: () => (this.selectionIndicator.visible = true)
-    });
-  }
-
   generateObjectPositions(room) {
     // positions is an array of [x,y] as viable locations
     // to place an object
-    // console.log(room);
     let positions = [];
     let x = room.x;
     let y = room.y;
