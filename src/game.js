@@ -1,6 +1,6 @@
 /** @typedef {import('phaser')} Phaser */
 import settings from "./settings.js";
-import { Map } from "./map.js";
+import { Map, Room, Exit } from "./map.js";
 import IsoPlugin from "./phaser3-plugin-isometric/IsoPlugin.js";
 import IsoSprite from "./phaser3-plugin-isometric/IsoSprite.js";
 import EnhancedIsoSprite from "./EnhancedIsoSprite.js";
@@ -101,8 +101,10 @@ export class GameScene extends Phaser.Scene {
     });
     let { x: ix, y: iy } = this.map.initial_position;
 
+    /** @type {Room} */
     this.room = this.map.initial_room;
 
+    /** @type {IsoSprite[]} */
     this.tiles = [];
     this.map.rooms.forEach(room => {
       let objects = [...Phaser.Math.RND.shuffle(this.RandomlyPlacedObjects)];
@@ -234,7 +236,9 @@ export class GameScene extends Phaser.Scene {
 
     this.inputEnabled = true;
     // respond to switch input
-    this.input.keyboard.on("keydown", async e => {
+    this.input.keyboard.on("keydown", async (
+      /** @type {KeyboardEvent} */ e
+    ) => {
       if (this.inputEnabled) {
         this.inputEnabled = false;
         if (e.key == "Enter" || e.key == "ArrowLeft") {
@@ -249,14 +253,14 @@ export class GameScene extends Phaser.Scene {
     });
 
     // respond to eye gaze user button click
-    document.getElementById("select").addEventListener("click", async e => {
+    document.getElementById("select").addEventListener("click", async () => {
       if (this.inputEnabled) {
         this.inputEnabled = false;
         await this.makeChoice();
         this.inputEnabled = true;
       }
     });
-    document.getElementById("next").addEventListener("click", async e => {
+    document.getElementById("next").addEventListener("click", async () => {
       if (this.inputEnabled) {
         this.inputEnabled = false;
         this.selectNext();
@@ -273,6 +277,7 @@ export class GameScene extends Phaser.Scene {
     this.speak(this.getRoomDescription());
   }
 
+  /** @param {string} text */
   speak(text) {
     if (settings.sound && settings.dictation) {
       this.utterThis = new SpeechSynthesisUtterance(text);
@@ -281,6 +286,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** @param {string} text */
   setRoomInfo(text) {
     document.getElementById("information_box").innerHTML = "";
     document.getElementById("information_box").innerHTML = text;
@@ -344,11 +350,13 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** @param {{x: number, y: number}[]} path */
   moveCharacter(path) {
     // Sets up a list of tweens, one for each tile to walk,
     // that will be chained by the timeline
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       const tweens = [];
+      /** @param {string} dir */
       const start = dir => () => this.player.play(dir, true);
       for (var i = 1; i < path.length; i++) {
         const ex = path[i].x;
@@ -378,14 +386,16 @@ export class GameScene extends Phaser.Scene {
 
   // allow waiting for input in the midst of autoplay
   async waitForInput() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       this.oneSwitchHandler = resolve;
       this.inputEnabled = true;
     });
   }
 
   // show the button we are clicking
+  /** @param {string} selector */
   async simulateClick(selector) {
+    /** @type {HTMLElement} */
     const button = document.querySelector(selector);
     button.style.backgroundColor = "#99badd";
     await this.delay(settings.speed);
@@ -393,8 +403,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   // wait for milliseconds to elapse
+  /** @param {number} t */
   async delay(t) {
-    return new Promise((resolve, reject) =>
+    return new Promise((resolve, _reject) =>
       this.time.delayedCall(t, resolve, null, null)
     );
   }
@@ -412,12 +423,13 @@ export class GameScene extends Phaser.Scene {
     // I'm faking up the initial one to get things started
     // later ones will be targets as returned by getTargets
 
-    const targetsToVisit = [
+    /** @type {Exit[]} */
+    const exitsToVisit = [
       {
         x: this.player.isoX,
         y: this.player.isoY,
-        object: this.player,
-        exit: { nextroom: this.room }
+        nextroom: this.room,
+        stepIn: { x: 0, y: 0 }
       }
     ];
     // keep track of rooms visited so we don't get into loops
@@ -425,6 +437,7 @@ export class GameScene extends Phaser.Scene {
     // I'm making these helps internal, they could be methods
 
     // make it look like the player is selecting the object
+    /** @param {{x: number, y: number}} target */
     const simulateSelect = async target => {
       await this.simulateClick("button#next");
       this.selectionIndicator.isoX = target.x;
@@ -440,6 +453,9 @@ export class GameScene extends Phaser.Scene {
       this.selectionIndicator.visible = false;
     };
     // return the exit that is on the path
+    /** @param {{x: number, y: number}[]} exits
+     *  @param {{x: number, y: number}[]} path
+     */
     const firstExitOnPath = (exits, path) => {
       for (const { x, y } of path) {
         for (const exit of exits) {
@@ -450,10 +466,9 @@ export class GameScene extends Phaser.Scene {
       }
     };
     // repeat for each place we need to visit
-    while (targetsToVisit.length) {
+    while (exitsToVisit.length) {
       // get the next room to visit
-      let { x, y, exit } = targetsToVisit.pop();
-      let nextroom = exit.nextroom;
+      let { x, y, nextroom } = exitsToVisit.pop();
       // while we aren't in that room, step toward it
       while (this.room != nextroom) {
         const path = await this.map.path(
@@ -485,7 +500,7 @@ export class GameScene extends Phaser.Scene {
         // exits are pushed onto the stack to handle later
         if ("exit" in target) {
           if (roomsVisited.indexOf(target.exit.nextroom) < 0) {
-            targetsToVisit.push(target);
+            exitsToVisit.push(target.exit);
           }
         } else {
           await simulateSelect(target);
@@ -509,15 +524,15 @@ export class GameScene extends Phaser.Scene {
     const targets = this.getTargets();
     this.targetIndex += 1;
     this.target = targets[this.targetIndex % targets.length];
-    if (this.target.object.description) {
+    if ("object" in this.target && this.target.object.description) {
       this.speak("You've selected " + this.target.object.description);
     } else {
       this.speak("go to the next room");
     }
 
     this.selectionIndicator.visible = true;
-    this.selectionIndicator.isoX = this.target.object.isoX;
-    this.selectionIndicator.isoY = this.target.object.isoY;
+    this.selectionIndicator.isoX = this.target.x;
+    this.selectionIndicator.isoY = this.target.y;
     this.selectionIndicator._project();
   }
 
@@ -532,6 +547,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** @param {string} sound */
   playSound(sound) {
     if (settings.sound) {
       let music = this.sound.add(sound);
@@ -539,6 +555,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** @param {{x: number, y: number, exit?: Exit, object?: EnhancedIsoSprite}} target */
   async visitChoice(target) {
     if ("exit" in target) {
       let { x, y, nextroom, stepIn } = target.exit;
@@ -557,7 +574,7 @@ export class GameScene extends Phaser.Scene {
       this.playSound("click");
     } else {
       // allow the object to provide the destination
-      let { x, y, z } = target.object.position();
+      let { x, y } = target.object.position();
       // get the path there
       let path = await this.map.path(this.player.isoX, this.player.isoY, x, y);
       // allow the object to edit the path
@@ -598,10 +615,11 @@ export class GameScene extends Phaser.Scene {
       };
     });
     sortByDistance(exits, px, py);
-    targets = [...targets, ...exits];
-    return targets;
+    const result = [...targets, ...exits];
+    return result;
   }
 
+  /** @param {Room} room */
   generateObjectPositions(room) {
     // positions is an array of [x,y] as viable locations
     // to place an object
